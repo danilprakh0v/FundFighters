@@ -1,0 +1,37 @@
+
+# .NET Core
+bin/
+obj/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# User-specific
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.tooling
+_ReSharper.Caches/
+_ReSharper.Projects/
+
+# Client / iOS (Future proofing)
+Client/DerivedData/
+Client/*.xcuserstate
+Client/build/
+
+PROJECT_CONCLUSIONS.txt

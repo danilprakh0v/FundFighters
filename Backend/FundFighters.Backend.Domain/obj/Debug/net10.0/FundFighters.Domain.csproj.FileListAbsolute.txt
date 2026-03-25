@@ -1,0 +1,11 @@
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/bin/Debug/net10.0/FundFighters.Domain.deps.json
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/bin/Debug/net10.0/FundFighters.Domain.dll
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/bin/Debug/net10.0/FundFighters.Domain.pdb
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/FundFighters.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/FundFighters.Domain.AssemblyInfoInputs.cache
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/FundFighters.Domain.AssemblyInfo.cs
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/FundFighters.Domain.csproj.CoreCompileInputs.cache
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/FundFighters.Domain.dll
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/refint/FundFighters.Domain.dll
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/FundFighters.Domain.pdb
+/Users/danilprakhov/RiderProjects/FundFighters/FundFighters.Domain/obj/Debug/net10.0/ref/FundFighters.Domain.dll
