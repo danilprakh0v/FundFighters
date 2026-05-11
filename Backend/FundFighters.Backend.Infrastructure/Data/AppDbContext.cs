@@ -2,9 +2,8 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Backend Service)
 Файл: AppDbContext.cs
-Расположение: FundFighters.Backend.Infrastructure/Data/
-Назначение: Entity Framework Core контекст базы данных приложения.
-            Конфигурирует маппинг всех сущностей и связи между ними.
+Расположение: Backend/FundFighters.Backend.Infrastructure/Data/
+Назначение: Контекст базы данных Entity Framework Core.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -18,13 +17,7 @@ using Microsoft.EntityFrameworkCore;
 namespace FundFighters.Backend.Infrastructure.Data;
 
 /// <summary>
-/// Entity Framework Core контекст базы данных для приложения FundFighters.
-/// Конфигурирует маппинг сущностей, первичные ключи, связи и индексы через Fluent API.
-/// Управляет всеми операциями с базой данных (CRUD).
-/// 
-/// Entity Framework Core database context for the FundFighters application.
-/// Configures entity mappings, primary keys, relationships and indexes using Fluent API.
-/// Manages all database operations (CRUD).
+/// Контекст базы данных для приложения FundFighters.
 /// </summary>
 public class AppDbContext : DbContext
 {
@@ -43,7 +36,11 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure Player entity
+        // Маппинг таблиц
+        modelBuilder.Entity<SavingsGoal>().ToTable("EnemyGoals");
+        modelBuilder.Entity<Battle>().ToTable("Battles");
+
+        // Конфигурация игрока
         modelBuilder.Entity<Player>(entity =>
         {
             entity.HasKey(p => p.Id);
@@ -79,7 +76,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Configure Enemy entity
+        // Конфигурация врага
         modelBuilder.Entity<Enemy>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -107,7 +104,7 @@ public class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
-        // Configure Transaction entity
+        // Конфигурация транзакции
         modelBuilder.Entity<Transaction>(entity =>
         {
             entity.HasKey(t => t.Id);
@@ -151,7 +148,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(t => t.Date).IsDescending();
         });
 
-        // Configure SavingsGoal entity
+        // Конфигурация цели сбережения
         modelBuilder.Entity<SavingsGoal>(entity =>
         {
             entity.HasKey(g => g.Id);
@@ -190,7 +187,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(g => g.PlayerId);
         });
 
-        // Configure Battle entity
+        // Конфигурация боя
         modelBuilder.Entity<Battle>(entity =>
         {
             entity.HasKey(b => b.Id);
@@ -214,7 +211,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(b => b.BattleDate).IsDescending();
         });
 
-        // Configure ExpenseCategory entity
+        // Конфигурация категорий расходов
         modelBuilder.Entity<ExpenseCategory>(entity =>
         {
             entity.HasKey(c => c.Id);

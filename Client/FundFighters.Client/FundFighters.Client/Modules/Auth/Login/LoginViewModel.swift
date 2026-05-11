@@ -57,10 +57,13 @@ final class LoginViewModel {
             
             switch result {
             case .success(let response):
-                // 4. Save Token / Сохраняем токен
+                // 4. Save Token + Username / Сохраняем токен и имя
                 if let token = response.token {
                     TokenManager.shared.save(token)
-                    
+                    // Сохраняем username из ответа сервера
+                    if let username = response.username, !username.isEmpty {
+                        UserManager.shared.session.username = username
+                    }
                     // Navigate to Dashboard / Переход на главный экран
                     DispatchQueue.main.async {
                         self?.onLoginSuccess?()

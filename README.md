@@ -68,13 +68,14 @@ flowchart TD
 
 ### Управление финансами (Геймификация)
 - **Боевая система сбережений:** Вместо скучного прогресс-бара, цели представлены "боссами" с HP-баром. Ваша задача — наносить урон (откладывать деньги), чтобы победить их!
+- **Rich Domain Model:** Бизнес-логика битв инкапсулирована внутри сущностей (например, `Enemy.TakeDamage`), что обеспечивает чистоту и тестируемость кода.
 - **Аналитика активности:** Подробная и интуитивно понятная отчетность по доходам и расходам.
 - **XP и уровни профиля:** Вы получаете очки опыта (XP) и повышаете уровень за финансовую дисциплину.
 
 ### iOS Клиент
 - 100% верстка кодом с использованием Auto Layout (без Storyboards) для высшей степени контроля над рендерингом UI.
 - Архитектурный подход **MVVM** вкупе с Coordinator-логикой роутинга.
-- Кастомные компоненты, градиентные слои (`CAGradientLayer`) и сложные пружинные анимации (`UIView.animate`).
+- **Liquid Glass UI:** Кастомные компоненты с эффектом матового стекла, градиентные слои (`CAGradientLayer`) и сложные пружинные анимации (`UIView.animate`).
 
 ### Система уведомлений
 - Интеграция с **SMTP / MailKit** для уверенной доставки email-уведомлений.
@@ -89,7 +90,7 @@ flowchart TD
 | **Мобильный клиент** | iOS 15+, Swift, UIKit, MVVM |
 | **Платформа** | .NET 10.0, ASP.NET Core 10.0 |
 | **База Данных / ORM** | PostgreSQL, Entity Framework Core 10.0 |
-| **Архитектура** | Clean Architecture, CQRS (MediatR) |
+| **Архитектура** | Clean Architecture, CQRS (MediatR), Rich Domain Model |
 | **Безопасность/Криптография** | BCrypt.Net, JWT |
 | **Дополнительные пакеты** | MailKit, Swagger (OpenAPI) |
 
@@ -170,6 +171,9 @@ dotnet run
 | `POST` | `/api/auth/verify` | `email`, `code` | Подтверждение введенного email после регистрации |
 | `POST` | `/api/auth/login` | `email`, `password` | Логин (высылает код 2FA на почту) |
 | `POST` | `/api/auth/verify-login` | `email`, `code` | Верификация 2FA кода и получение JWT токена (Access) |
+| `GET` | `/api/dashboard/data` | — | Получение агрегированных данных для главного экрана |
+| `POST` | `/api/game/transaction` | `amount`, `type`, `title`, `category` | Обработка транзакции и нанесение урона "боссу" |
+| `GET` | `/api/game/state` | `playerId` | Текущее состояние битвы (HP игрока и босса) |
 
 ---
 
@@ -193,6 +197,6 @@ dotnet ef migrations add NameOfMigration --project ../FundFighters.Backend.Infra
 **Автор:** Прахов Данил  
 **Email:** danilla9082@gmail.com  
 **GitHub:** [@danilprakh0v](https://github.com/danilprakh0v)  
-**Telegram:** [@kirayoshikag](https://t.me/kirayoshikag)  
+**Telegram:** [@danilprakhov](https://t.me/danilprakhov)  
 
 > Проект разработан как курсовая работа с целью закрепления современных подходов к созданию нативных мобильных клиентов и отказоустойчивых облачных бэкенд-решений.

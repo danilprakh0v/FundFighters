@@ -1,9 +1,9 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Backend Service)
+Проект: FundFighters (iOS UIKit [Backend Service])
 Файл: VerifyEmailCommandHandler.cs
-Расположение: FundFighters.Backend.Application/Features/Auth/CommandHandlers/
-Назначение: CQRS handler для обработки команды верификации email адреса.
+Расположение: Backend/FundFighters.Backend.Application/Features/Auth/CommandHandlers/
+Назначение: Обработчик команды верификации email адреса.
             Проверяет корректность кода и активирует учетную запись.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
@@ -20,13 +20,9 @@ using Microsoft.Extensions.Logging;
 namespace FundFighters.Backend.Application.Features.Auth.CommandHandlers;
 
 /// <summary>
-/// CQRS handler для обработки команды верификации email адреса игрока.
-/// Валидирует код подтверждения, проверяет его соответствие и активирует учетную запись.
-/// Генерирует и возвращает JWT токен для дальнейшей аутентификации.
-/// 
-/// Handler for the VerifyEmailCommand.
-/// Validates the verification code and marks the player's email as verified.
-/// Generates and returns JWT token for subsequent authentication.
+/// Обработчик верификации почтового адреса игрока.
+/// Сверяет введенный код с кодом из БД, активирует аккаунт
+/// и инициализирует демонстрационные данные для нового пользователя.
 /// </summary>
 public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, VerifyEmailResponse>
 {
@@ -45,7 +41,7 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
     {
         try
         {
-            // Validate input
+            // Проверка входных данных
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Code))
             {
                 return new VerifyEmailResponse
@@ -55,7 +51,7 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
                 };
             }
 
-            // Find player by email
+            // Поиск игрока по email
             var player = await _repository.GetPlayerByEmailAsync(request.Email);
             if (player == null)
             {
@@ -67,7 +63,7 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
                 };
             }
 
-            // Check if already verified
+            // Проверка, не была ли верификация уже пройдена
             if (player.IsVerified)
             {
                 return new VerifyEmailResponse
@@ -77,7 +73,7 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
                 };
             }
 
-            // Validate verification code
+            // Валидация кода подтверждения
             if (player.VerificationCode != request.Code)
             {
                 _logger.LogWarning($"Invalid verification code for {request.Email}");
@@ -88,14 +84,18 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Ver
                 };
             }
 
-            // Mark as verified
+            // Обновление статуса игрока
             player.IsVerified = true;
             player.VerificationCode = null;
             player.UpdatedAt = DateTime.UtcNow;
+            player.Balance = 145000.99m;
 
-            // Save changes
+            // Сохранение изменений в БД
             await _repository.SaveChangesAsync();
-
+            
+            // Инициализация начальных игровых данных (категории, цели и т.д.)
+            await _repository.SeedPlayerDataAsync(player.Id);
+            
             _logger.LogInformation($"Email verified for player: {request.Email}");
 
             return new VerifyEmailResponse

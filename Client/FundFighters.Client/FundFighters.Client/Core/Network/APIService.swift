@@ -1,9 +1,9 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Client)
+Проект: FundFighters (iOS UIKit [Client/Backend Service])
 Файл: APIService.swift
-Расположение: FundFighters.Client/FundFighters.Client/Core/Network/
-Назначение: Service layer for making specific API calls (Game, Auth). //              Сервисный слой для выполнения конкретных вызовов API (Игра, Авторизация).
+Расположение: Client/FundFighters.Client/FundFighters.Client/Core/Network/
+Назначение: Сервисный слой для выполнения запросов к API
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -18,9 +18,9 @@ final class APIService {
     
     private init() {}
     
-    // MARK: - Auth
+    // MARK: - Авторизация
     
-    /// Login user / Вход пользователя
+    // Вход пользователя
     func login(request: LoginRequest, completion: @escaping (Result<LoginResponse, APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/auth/login",
@@ -30,7 +30,7 @@ final class APIService {
         )
     }
     
-    /// Register new user / Регистрация нового пользователя
+    // Регистрация нового пользователя
     func register(request: RegisterRequest, completion: @escaping (Result<Void, APIError>) -> Void) {
         NetworkManager.shared.requestNoResponse(
             endpoint: "/auth/register",
@@ -40,7 +40,7 @@ final class APIService {
         )
     }
     
-    /// Verify email during registration / Подтверждение почты при регистрации
+    // Подтверждение почты при регистрации
     func verifyEmail(request: VerifyCodeRequest, completion: @escaping (Result<Void, APIError>) -> Void) {
         NetworkManager.shared.requestNoResponse(
             endpoint: "/auth/verify",
@@ -50,7 +50,7 @@ final class APIService {
         )
     }
     
-    /// Verify login (2FA or first-time login) / Подтверждение входа
+    // Подтверждение входа (2FA или первый вход)
     func verifyLogin(request: VerifyCodeRequest, completion: @escaping (Result<LoginResponse, APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/auth/verify-login",
@@ -60,7 +60,7 @@ final class APIService {
         )
     }
     
-    /// Request password reset / Запрос на сброс пароля
+    // Запрос на сброс пароля
     func forgotPassword(request: ForgotPasswordRequest, completion: @escaping (Result<Void, APIError>) -> Void) {
         NetworkManager.shared.requestNoResponse(
             endpoint: "/auth/forgot-password",
@@ -70,7 +70,7 @@ final class APIService {
         )
     }
     
-    /// Reset password with code / Сброс пароля с использованием кода
+    // Сброс пароля с использованием кода
     func resetPassword(request: ResetPasswordRequest, completion: @escaping (Result<Void, APIError>) -> Void) {
         NetworkManager.shared.requestNoResponse(
             endpoint: "/auth/reset-password",
@@ -80,9 +80,9 @@ final class APIService {
         )
     }
     
-    // MARK: - Dashboard
+    // MARK: - Главный экран (Dashboard)
     
-    /// Get dashboard data / Получить данные главного экрана
+    // Получить данные главного экрана
     func getDashboard(completion: @escaping (Result<DashboardResponse, APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/dashboard/data",
@@ -92,7 +92,7 @@ final class APIService {
         )
     }
     
-    /// Get balance info / Получить информацию о балансе
+    // Получить информацию о балансе
     func getBalance(completion: @escaping (Result<BalanceInfoResponse, APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/dashboard/balance",
@@ -102,7 +102,7 @@ final class APIService {
         )
     }
     
-    /// Get active savings goal / Получить активную цель сбережения
+    // Получить активную цель сбережения
     func getActiveGoal(completion: @escaping (Result<SavingsGoalResponse, APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/dashboard/active-goal",
@@ -112,7 +112,7 @@ final class APIService {
         )
     }
     
-    /// Get recent transactions / Получить недавние транзакции
+    // Получить недавние транзакции
     func getRecentTransactions(completion: @escaping (Result<[TransactionResponse], APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/dashboard/recent-transactions",
@@ -122,7 +122,7 @@ final class APIService {
         )
     }
     
-    /// Get recent battles / Получить недавние битвы
+    // Получить недавние битвы
     func getRecentBattles(completion: @escaping (Result<[BattleResponse], APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/dashboard/recent-battles",
@@ -132,7 +132,7 @@ final class APIService {
         )
     }
     
-    /// Get expense categories / Получить категории расходов
+    // Получить категории расходов
     func getExpenseCategories(completion: @escaping (Result<[ExpenseCategoryResponse], APIError>) -> Void) {
         NetworkManager.shared.request(
             endpoint: "/dashboard/expense-categories",
@@ -141,5 +141,26 @@ final class APIService {
             completion: completion
         )
     }
+    
+    // MARK: - Игровые механики и транзакции
+    
+    // Обработать новую транзакцию
+    func addTransaction(request: ProcessTransactionRequest, completion: @escaping (Result<Void, APIError>) -> Void) {
+        NetworkManager.shared.requestNoResponse(
+            endpoint: "/game/transaction",
+            method: "POST",
+            body: request,
+            completion: completion
+        )
+    }
+    
+    // Удалить транзакцию
+    func deleteTransaction(transactionId: String, completion: @escaping (Result<Void, APIError>) -> Void) {
+        NetworkManager.shared.requestNoResponse(
+            endpoint: "/game/transaction/\(transactionId)",
+            method: "DELETE",
+            body: nil as String?,
+            completion: completion
+        )
+    }
 }
-

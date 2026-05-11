@@ -2,9 +2,8 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Backend Service)
 Файл: AuthController.cs
-Расположение: FundFighters.Backend.API/Controllers/
+Расположение: Backend/FundFighters.Backend.API/Controllers/
 Назначение: REST API контроллер для аутентификации и управления пользователями.
-            Предоставляет эндпоинты регистрации, верификации email и входа.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -20,11 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FundFighters.Backend.API.Controllers;
 
 /// <summary>
-/// Контроллер аутентификации для регистрации пользователей, верификации email и входа.
-/// Обрабатывает все HTTP запросы, связанные с аутентификацией и управлением учетными записями.
-/// 
-/// Authentication controller for user registration, email verification, and login.
-/// Handles all authentication-related HTTP requests and account management.
+/// Контроллер аутентификации: регистрация, верификация email и вход в систему.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -40,11 +35,8 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Registers a new player account.
-    /// Validates input, creates player, hashes password, and sends verification email.
+    /// Регистрация нового игрового аккаунта.
     /// </summary>
-    /// <param name="request">Registration request containing username, email, and password.</param>
-    /// <returns>Registration result with player ID and message.</returns>
     [HttpPost("register")]
     [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status400BadRequest)]
@@ -55,7 +47,7 @@ public class AuthController : ControllerBase
             return BadRequest(new RegisterResponse
             {
                 Success = false,
-                Message = "Invalid request data."
+                Message = "Некорректные данные запроса."
             });
         }
 
@@ -70,22 +62,17 @@ public class AuthController : ControllerBase
 
         if (!response.Success)
         {
-            _logger.LogWarning($"Registration failed for email: {request.Email}");
-            _logger.LogWarning($"Failure reason: {response.Message}");
+            _logger.LogWarning($"Ошибка регистрации для: {request.Email}. Причина: {response.Message}");
             return BadRequest(response);
         }
 
-        _logger.LogInformation($"User registered successfully: {request.Email}");
-        _logger.LogInformation($"Verification code sent to: {request.Email}");
+        _logger.LogInformation($"Пользователь успешно зарегистрирован: {request.Email}");
         return Ok(response);
     }
 
     /// <summary>
-    /// Verifies a player's email using the verification code.
-    /// Code is sent to the email during registration.
+    /// Верификация email с помощью кода подтверждения.
     /// </summary>
-    /// <param name="request">Verification request containing email and verification code.</param>
-    /// <returns>Verification result with player ID and message.</returns>
     [HttpPost("verify")]
     [ProducesResponseType(typeof(VerifyEmailResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(VerifyEmailResponse), StatusCodes.Status400BadRequest)]
@@ -96,7 +83,7 @@ public class AuthController : ControllerBase
             return BadRequest(new VerifyEmailResponse
             {
                 Success = false,
-                Message = "Invalid request data."
+                Message = "Некорректные данные запроса."
             });
         }
 
@@ -110,20 +97,17 @@ public class AuthController : ControllerBase
 
         if (!response.Success)
         {
-            _logger.LogWarning($"Email verification failed for: {request.Email}. Reason: {response.Message}");
+            _logger.LogWarning($"Ошибка верификации email для: {request.Email}. Причина: {response.Message}");
             return BadRequest(response);
         }
 
-        _logger.LogInformation($"Email verified successfully: {request.Email}");
+        _logger.LogInformation($"Email успешно верифицирован: {request.Email}");
         return Ok(response);
     }
 
     /// <summary>
-    /// Authenticates a player with email and password.
-    /// Returns player ID if credentials are valid and email is verified.
+    /// Аутентификация пользователя (вход).
     /// </summary>
-    /// <param name="request">Login request containing email and password.</param>
-    /// <returns>Login result with player ID and message.</returns>
     [HttpPost("login")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status401Unauthorized)]
@@ -134,7 +118,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new LoginResponse
             {
                 Success = false,
-                Message = "Invalid request data."
+                Message = "Некорректные данные запроса."
             });
         }
 
@@ -148,20 +132,17 @@ public class AuthController : ControllerBase
 
         if (!response.Success)
         {
-            _logger.LogWarning($"Login failed for email: {request.Email}. Reason: {response.Message}");
+            _logger.LogWarning($"Ошибка входа для: {request.Email}. Причина: {response.Message}");
             return Unauthorized(response);
         }
 
-        _logger.LogInformation($"User logged in successfully: {request.Email}");
+        _logger.LogInformation($"Пользователь успешно вошел в систему: {request.Email}");
         return Ok(response);
     }
 
     /// <summary>
-    /// Verifies the two-factor authentication code for login.
-    /// Completes the login process after 2FA code verification.
+    /// Проверка кода двухфакторной аутентификации.
     /// </summary>
-    /// <param name="request">Verification request containing email and 2FA code.</param>
-    /// <returns>Verification result with player ID and message.</returns>
     [HttpPost("verify-login")]
     [ProducesResponseType(typeof(VerifyLoginCodeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(VerifyLoginCodeResponse), StatusCodes.Status400BadRequest)]
@@ -172,7 +153,7 @@ public class AuthController : ControllerBase
             return BadRequest(new VerifyLoginCodeResponse
             {
                 Success = false,
-                Message = "Invalid request data."
+                Message = "Некорректные данные запроса."
             });
         }
 
@@ -186,19 +167,17 @@ public class AuthController : ControllerBase
 
         if (!response.Success)
         {
-            _logger.LogWarning($"Login code verification failed for: {request.Email}. Reason: {response.Message}");
+            _logger.LogWarning($"Ошибка проверки кода входа для: {request.Email}. Причина: {response.Message}");
             return BadRequest(response);
         }
 
-        _logger.LogInformation($"Login code verified successfully: {request.Email}");
+        _logger.LogInformation($"Код входа успешно подтвержден: {request.Email}");
         return Ok(response);
     }
 
     /// <summary>
-    /// Инициирует процесс сброса пароля. Отправляет код подтверждения на email.
-    /// Initiates password reset process. Sends confirmation code to email.
+    /// Инициация процесса восстановления пароля.
     /// </summary>
-    /// <param name="request">Request containing user email.</param>
     [HttpPost("forgot-password")]
     [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status400BadRequest)]
@@ -209,7 +188,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ForgotPasswordResponse
             {
                 Success = false,
-                Message = "Email is required."
+                Message = "Email обязателен для заполнения."
             });
         }
 
@@ -218,19 +197,17 @@ public class AuthController : ControllerBase
 
         if (!response.Success)
         {
-            _logger.LogWarning($"Forgot password request failed for: {request.Email}. Reason: {response.Message}");
+            _logger.LogWarning($"Ошибка запроса восстановления пароля для: {request.Email}. Причина: {response.Message}");
             return BadRequest(response);
         }
 
-        _logger.LogInformation($"Forgot password code sent to: {request.Email}");
+        _logger.LogInformation($"Код восстановления пароля отправлен на: {request.Email}");
         return Ok(response);
     }
 
     /// <summary>
-    /// Завершает сброс пароля, проверяя код и устанавливая новый пароль.
-    /// Completes password reset by verifying code and setting new password.
+    /// Завершение процесса сброса пароля.
     /// </summary>
-    /// <param name="request">Request containing email, code and new password.</param>
     [HttpPost("reset-password")]
     [ProducesResponseType(typeof(ResetPasswordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResetPasswordResponse), StatusCodes.Status400BadRequest)]
@@ -241,7 +218,7 @@ public class AuthController : ControllerBase
             return BadRequest(new ResetPasswordResponse
             {
                 Success = false,
-                Message = "Invalid request data."
+                Message = "Некорректные данные запроса."
             });
         }
 
@@ -256,20 +233,17 @@ public class AuthController : ControllerBase
 
         if (!response.Success)
         {
-            _logger.LogWarning($"Password reset failed for: {request.Email}. Reason: {response.Message}");
+            _logger.LogWarning($"Ошибка сброса пароля для: {request.Email}. Причина: {response.Message}");
             return BadRequest(response);
         }
 
-        _logger.LogInformation($"Password reset successfully for: {request.Email}");
+        _logger.LogInformation($"Пароль успешно изменен для: {request.Email}");
         return Ok(response);
     }
 }
 
-
-
 /// <summary>
-/// Модель запроса для регистрации пользователя.
-/// Request model for user registration.
+/// Запрос на регистрацию пользователя.
 /// </summary>
 public class RegisterRequest
 {
@@ -279,8 +253,7 @@ public class RegisterRequest
 }
 
 /// <summary>
-/// Модель запроса для входа пользователя в систему.
-/// Request model for user login.
+/// Запрос на вход в систему.
 /// </summary>
 public class LoginRequest
 {
@@ -289,8 +262,7 @@ public class LoginRequest
 }
 
 /// <summary>
-/// Модель запроса для верификации email адреса.
-/// Request model for email verification.
+/// Запрос на верификацию email.
 /// </summary>
 public class VerifyRequest
 {
@@ -299,8 +271,7 @@ public class VerifyRequest
 }
 
 /// <summary>
-/// Модель запроса для верификации кода двухфакторной аутентификации при входе.
-/// Request model for verifying two-factor authentication code during login.
+/// Запрос на подтверждение кода 2FA.
 /// </summary>
 public class VerifyLoginCodeRequest
 {
@@ -309,8 +280,7 @@ public class VerifyLoginCodeRequest
 }
 
 /// <summary>
-/// Модель запроса для верификации email адреса.
-/// Request model for email verification.
+/// Запрос на восстановление пароля.
 /// </summary>
 public class ForgotPasswordRequest
 {
@@ -318,8 +288,7 @@ public class ForgotPasswordRequest
 }
 
 /// <summary>
-/// Модель запроса для завершения сброса пароля.
-/// Request model for password reset completion.
+/// Запрос на установку нового пароля.
 /// </summary>
 public class ResetPasswordRequest
 {

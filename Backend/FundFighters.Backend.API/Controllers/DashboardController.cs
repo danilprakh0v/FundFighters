@@ -2,12 +2,12 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Backend Service)
 Файл: DashboardController.cs
-Расположение: FundFighters.Backend.API/Controllers/
+Расположение: Backend/FundFighters.Backend.API/Controllers/
 Назначение: REST API контроллер для получения данных главного экрана.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
-Дата создания: 15.03.2026
+Дата создания: 27.01.2026
 ===============================================================================
 */
 
@@ -22,10 +22,6 @@ namespace FundFighters.Backend.API.Controllers;
 
 /// <summary>
 /// Контроллер главного экрана (Dashboard) приложения.
-/// Предоставляет эндпоинты для получения данных для отображения на главном экране.
-/// 
-/// Dashboard controller for the main screen of the application.
-/// Provides endpoints for retrieving data to display on the main screen.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -42,13 +38,8 @@ public class DashboardController : ControllerBase
     }
 
     /// <summary>
-    /// Получает все данные для главного экрана.
-    /// Включает информацию о пользователе, балансе, целях, транзакциях, боях и расходах.
-    /// 
-    /// Get all dashboard data.
-    /// Includes user info, balance, goals, transactions, battles, and expenses.
+    /// Получение всех данных для главного экрана.
     /// </summary>
-    /// <returns>Dashboard data with all sections.</returns>
     [HttpGet("data")]
     [ProducesResponseType(typeof(DashboardDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -60,35 +51,32 @@ public class DashboardController : ControllerBase
             var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(playerId))
             {
-                _logger.LogWarning("User ID not found in claims");
-                return Unauthorized(new { message = "User identification failed" });
+                _logger.LogWarning("ID пользователя не найден в Claims.");
+                return Unauthorized(new { message = "Ошибка идентификации пользователя." });
             }
 
             var query = new GetDashboardQuery { PlayerId = playerId };
             var dashboard = await _mediator.Send(query);
 
-            _logger.LogInformation($"Dashboard retrieved successfully for user: {playerId}");
+            _logger.LogInformation($"Данные Dashboard успешно получены для: {playerId}");
             return Ok(dashboard);
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning($"User not found: {ex.Message}");
+            _logger.LogWarning($"Пользователь не найден: {ex.Message}");
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving dashboard: {ex.Message}");
+            _logger.LogError($"Ошибка при получении данных Dashboard: {ex.Message}");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving dashboard data" });
+                new { message = "Произошла ошибка при получении данных Dashboard." });
         }
     }
 
     /// <summary>
-    /// Получает только информацию о балансе.
-    /// 
-    /// Get balance information only.
+    /// Получение информации о балансе.
     /// </summary>
-    /// <returns>Balance and income/expense info.</returns>
     [HttpGet("balance")]
     [ProducesResponseType(typeof(BalanceInfoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -99,7 +87,7 @@ public class DashboardController : ControllerBase
             var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(playerId))
             {
-                return Unauthorized(new { message = "User identification failed" });
+                return Unauthorized(new { message = "Ошибка идентификации пользователя." });
             }
 
             var query = new GetDashboardQuery { PlayerId = playerId };
@@ -109,18 +97,15 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving balance: {ex.Message}");
+            _logger.LogError($"Ошибка при получении баланса: {ex.Message}");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving balance" });
+                new { message = "Произошла ошибка при получении баланса." });
         }
     }
 
     /// <summary>
-    /// Получает активную цель сбережения (врага).
-    /// 
-    /// Get the active savings goal (enemy).
+    /// Получение активной цели сбережения (врага).
     /// </summary>
-    /// <returns>Active savings goal data.</returns>
     [HttpGet("active-goal")]
     [ProducesResponseType(typeof(SavingsGoalDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -132,7 +117,7 @@ public class DashboardController : ControllerBase
             var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(playerId))
             {
-                return Unauthorized(new { message = "User identification failed" });
+                return Unauthorized(new { message = "Ошибка идентификации пользователя." });
             }
 
             var query = new GetDashboardQuery { PlayerId = playerId };
@@ -140,25 +125,22 @@ public class DashboardController : ControllerBase
 
             if (dashboard.ActiveGoal == null)
             {
-                return NotFound(new { message = "No active savings goal found" });
+                return NotFound(new { message = "Активная цель сбережения не найдена." });
             }
 
             return Ok(dashboard.ActiveGoal);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving active goal: {ex.Message}");
+            _logger.LogError($"Ошибка при получении активной цели: {ex.Message}");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving active goal" });
+                new { message = "Произошла ошибка при получении активной цели." });
         }
     }
 
     /// <summary>
-    /// Получает список недавних транзакций.
-    /// 
-    /// Get list of recent transactions.
+    /// Получение списка последних транзакций.
     /// </summary>
-    /// <returns>List of recent transactions.</returns>
     [HttpGet("recent-transactions")]
     [ProducesResponseType(typeof(List<TransactionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -169,7 +151,7 @@ public class DashboardController : ControllerBase
             var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(playerId))
             {
-                return Unauthorized(new { message = "User identification failed" });
+                return Unauthorized(new { message = "Ошибка идентификации пользователя." });
             }
 
             var query = new GetDashboardQuery { PlayerId = playerId };
@@ -179,18 +161,15 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving recent transactions: {ex.Message}");
+            _logger.LogError($"Ошибка при получении транзакций: {ex.Message}");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving transactions" });
+                new { message = "Произошла ошибка при получении транзакций." });
         }
     }
 
     /// <summary>
-    /// Получает список недавних боев.
-    /// 
-    /// Get list of recent battles.
+    /// Получение списка последних боев.
     /// </summary>
-    /// <returns>List of recent battles.</returns>
     [HttpGet("recent-battles")]
     [ProducesResponseType(typeof(List<BattleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -201,7 +180,7 @@ public class DashboardController : ControllerBase
             var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(playerId))
             {
-                return Unauthorized(new { message = "User identification failed" });
+                return Unauthorized(new { message = "Ошибка идентификации пользователя." });
             }
 
             var query = new GetDashboardQuery { PlayerId = playerId };
@@ -211,18 +190,15 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving recent battles: {ex.Message}");
+            _logger.LogError($"Ошибка при получении боев: {ex.Message}");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving battles" });
+                new { message = "Произошла ошибка при получении боев." });
         }
     }
 
     /// <summary>
-    /// Получает разбивку расходов по категориям.
-    /// 
-    /// Get expense breakdown by categories.
+    /// Получение разбивки расходов по категориям.
     /// </summary>
-    /// <returns>List of expense categories with totals.</returns>
     [HttpGet("expense-categories")]
     [ProducesResponseType(typeof(List<ExpenseCategoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -233,7 +209,7 @@ public class DashboardController : ControllerBase
             var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(playerId))
             {
-                return Unauthorized(new { message = "User identification failed" });
+                return Unauthorized(new { message = "Ошибка идентификации пользователя." });
             }
 
             var query = new GetDashboardQuery { PlayerId = playerId };
@@ -243,9 +219,9 @@ public class DashboardController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving expense categories: {ex.Message}");
+            _logger.LogError($"Ошибка при получении категорий расходов: {ex.Message}");
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An error occurred while retrieving expense categories" });
+                new { message = "Произошла ошибка при получении категорий расходов." });
         }
     }
 }

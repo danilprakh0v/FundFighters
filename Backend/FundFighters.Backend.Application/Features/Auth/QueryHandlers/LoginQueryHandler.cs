@@ -1,10 +1,10 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Backend Service)
+Проект: FundFighters (iOS UIKit [Backend Service])
 Файл: LoginQueryHandler.cs
-Расположение: FundFighters.Backend.Application/Features/Auth/QueryHandlers/
-Назначение: CQRS handler для обработки запроса аутентификации игрока.
-            Проверяет учетные данные, генерирует и возвращает JWT токен.
+Расположение: Backend/FundFighters.Backend.Application/Features/Auth/QueryHandlers/
+Назначение: Обработчик запроса аутентификации игрока.
+            Проверяет учетные данные и генерирует JWT токен.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -21,13 +21,9 @@ using Microsoft.Extensions.Logging;
 namespace FundFighters.Backend.Application.Features.Auth.QueryHandlers;
 
 /// <summary>
-/// CQRS handler для обработки запроса аутентификации (логина) игрока.
-/// Валидирует email и пароль, проверяет что email верифицирован,
-/// генерирует JWT токен и возвращает информацию игрока.
-/// 
-/// Handler for the LoginQuery.
-/// Validates email and password, verifies email is confirmed, and returns JWT token.
-/// Generates authentication token for session management.
+/// Обработчик входа в систему (Login).
+/// Проверяет корректность email/пароля, статус верификации аккаунта
+/// и генерирует токен доступа JWT при успешном сопоставлении данных.
 /// </summary>
 public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
 {
@@ -52,7 +48,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
     {
         try
         {
-            // Validate input
+            // Проверка входных данных
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             {
                 return new LoginResponse
@@ -62,7 +58,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
                 };
             }
 
-            // Find player by email
+            // Поиск игрока по email
             var player = await _repository.GetPlayerByEmailAsync(request.Email);
             if (player == null)
             {
@@ -74,7 +70,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
                 };
             }
 
-            // Check if email is verified
+            // Проверка статуса верификации
             if (!player.IsVerified)
             {
                 _logger.LogWarning($"Login attempt with unverified email: {request.Email}");
@@ -85,7 +81,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
                 };
             }
 
-            // Verify password hash
+            // Валидация хеша пароля
             if (!BCrypt.Net.BCrypt.Verify(request.Password, player.PasswordHash))
             {
                 _logger.LogWarning($"Invalid password for email: {request.Email}");
@@ -96,17 +92,14 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
                 };
             }
 
-            // Check if two-factor authentication is enabled
+            // Обработка двухфакторной аутентификации (если включена)
             if (player.IsTwoFactorEnabled)
             {
-                // Generate two-factor code
                 var twoFactorCode = GenerateVerificationCode();
 
-                // Save code to player
                 player.TwoFactorCode = twoFactorCode;
                 await _repository.SaveChangesAsync();
 
-                // Send two-factor code email
                 try
                 {
                     await _emailService.SendLoginVerificationCodeAsync(request.Email, twoFactorCode);
@@ -134,6 +127,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
 
             _logger.LogInformation($"Successful login for: {request.Email}");
 
+            // Генерация JWT токена
             var token = _jwtService.GenerateToken(player.Id.ToString(), player.Email, player.Username);
 
             return new LoginResponse
@@ -157,7 +151,7 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
     }
 
     /// <summary>
-    /// Generates a random 6-digit verification code.
+    /// Генерация случайного 6-значного кода.
     /// </summary>
     private static string GenerateVerificationCode()
     {

@@ -1,9 +1,9 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Client)
+Проект: FundFighters (iOS UIKit [Client/Backend Service])
 Файл: BattleViewController.swift
-Расположение: FundFighters.Client/FundFighters.Client/Modules/Battle/
-Назначение: ЭКРАН БИТВЫ — Save Money / Track Spending с анимациями атаки.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Modules/Battle/
+Назначение: Экран битвы — игровая визуализация процесса накопления средств
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -13,7 +13,8 @@
 
 import UIKit
 
-// MARK: - Liquid Glass Container (Светлое стекло)
+// MARK: - LightLiquidGlassContainerView (Светлый стеклянный контейнер)
+
 fileprivate class LightLiquidGlassContainerView: UIView {
     private(set) var tintOverlay = UIView()
     private let blurContainer    = UIView()
@@ -27,6 +28,7 @@ fileprivate class LightLiquidGlassContainerView: UIView {
     }
     required init?(coder: NSCoder) { fatalError() }
 
+    // Настройка эффекта стекла
     func setupGlass() {
         guard !didSetup else { return }
         didSetup = true
@@ -95,7 +97,8 @@ fileprivate class LightLiquidGlassContainerView: UIView {
     }
 }
 
-// MARK: - Glass Circle Button
+// MARK: - GlassCircleButton (Стеклянная круглая кнопка)
+
 fileprivate final class GlassCircleButton: UIControl {
     private let glassContainer = LightLiquidGlassContainerView()
     private let iconImageView = UIImageView()
@@ -167,13 +170,16 @@ fileprivate final class GlassCircleButton: UIControl {
 }
 
 // MARK: - BattleViewController
+
 final class BattleViewController: UIViewController {
 
-    // MARK: - Callbacks
-    /// Вызывается после каждого изменения суммы (current, target, goalName)
+    // MARK: - Обратные вызовы (Callbacks)
+    
+    // Вызывается после каждого изменения суммы накоплений
     var onSavingsUpdated: ((Double, Double, String) -> Void)?
 
-    // MARK: - State
+    // MARK: - Состояние (State)
+    
     private var currentAmount: Double = 23250
     private var targetAmount: Double  = 62000
     private var goalName: String      = "Playstation 5 Slim"
@@ -181,7 +187,8 @@ final class BattleViewController: UIViewController {
 
     private var progress: Double { min(1.0, max(0, currentAmount / targetAmount)) }
 
-    // MARK: - Custom Init
+    // MARK: - Инициализатор (Init)
+    
     convenience init(currentAmount: Double, targetAmount: Double, goalName: String) {
         self.init()
         self.currentAmount = currentAmount
@@ -189,7 +196,7 @@ final class BattleViewController: UIViewController {
         self.goalName      = goalName
     }
 
-    // MARK: - UI Elements
+    // MARK: - UI Элементы
 
     private let headerContainer = UIView()
 
@@ -198,7 +205,7 @@ final class BattleViewController: UIViewController {
 
     private let titleLabel: UILabel = {
         let lbl = UILabel()
-        lbl.text = "Battle Scene"
+        lbl.text = "Сцена битвы"
         lbl.font = .systemFont(ofSize: 28, weight: .black)
         lbl.textColor = .black
         return lbl
@@ -221,7 +228,7 @@ final class BattleViewController: UIViewController {
         return iv
     }()
 
-    // Спрайт игрока — обычная поза
+    // Спрайт игрока
     private let playerImageView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(named: "player_m")
@@ -237,7 +244,7 @@ final class BattleViewController: UIViewController {
         return iv
     }()
 
-    // Визуальная вспышка удара
+    // Визуальный эффект удара
     private let slashEffectView: UIView = {
         let v = UIView()
         v.backgroundColor = .white
@@ -270,7 +277,7 @@ final class BattleViewController: UIViewController {
         return btn
     }()
 
-    // MARK: - Lifecycle
+    // MARK: - Жизненный цикл (Lifecycle)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -286,6 +293,7 @@ final class BattleViewController: UIViewController {
         forceDesignOverrides()
     }
 
+    // Принудительная настройка стилей карточки
     private func forceDesignOverrides() {
         goalCardView.layer.borderWidth = 0
         goalCardView.layer.shadowColor = UIColor.black.cgColor
@@ -300,7 +308,7 @@ final class BattleViewController: UIViewController {
         }
     }
 
-    // MARK: - Setup
+    // MARK: - Настройка верстки (Setup)
 
     private func setupViews() {
         [headerContainer, backButton, titleLabel, notificationButton,
@@ -331,7 +339,7 @@ final class BattleViewController: UIViewController {
         let safeArea = view.safeAreaLayoutGuide
 
         NSLayoutConstraint.activate([
-            // Header
+            // Заголовок (Header)
             headerContainer.topAnchor.constraint(equalTo: safeArea.topAnchor, constant: 10),
             headerContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             headerContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -350,12 +358,12 @@ final class BattleViewController: UIViewController {
             notificationButton.widthAnchor.constraint(equalToConstant: 44),
             notificationButton.heightAnchor.constraint(equalToConstant: 44),
 
-            // Card
+            // Карточка (Card)
             goalCardView.topAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: 20),
             goalCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             goalCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
 
-            // Battle Container
+            // Контейнер битвы
             battleContainer.topAnchor.constraint(equalTo: goalCardView.bottomAnchor, constant: 20),
             battleContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             battleContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -371,7 +379,7 @@ final class BattleViewController: UIViewController {
             slashEffectView.trailingAnchor.constraint(equalTo: battleContainer.trailingAnchor),
             slashEffectView.bottomAnchor.constraint(equalTo: battleContainer.bottomAnchor),
 
-            // Спрайты одинакового размера
+            // Спрайты
             playerImageView.leadingAnchor.constraint(equalTo: battleContainer.leadingAnchor, constant: 30),
             playerImageView.bottomAnchor.constraint(equalTo: battleContainer.bottomAnchor, constant: -35),
             playerImageView.widthAnchor.constraint(equalToConstant: 120),
@@ -382,7 +390,7 @@ final class BattleViewController: UIViewController {
             enemyImageView.widthAnchor.constraint(equalToConstant: 120),
             enemyImageView.heightAnchor.constraint(equalToConstant: 150),
 
-            // Bottom Actions
+            // Действия внизу (Bottom Actions)
             actionsStackView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -10),
             actionsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             actionsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -406,7 +414,7 @@ final class BattleViewController: UIViewController {
         trackSpendingButton.addTarget(self, action: #selector(trackSpendingTapped), for: .touchUpInside)
     }
 
-    // MARK: - Card refresh
+    // MARK: - Обновление данных (Refresh)
 
     private func refreshCard(animated: Bool = false) {
         let pct = progress * 100
@@ -418,7 +426,7 @@ final class BattleViewController: UIViewController {
             progress: progress
         )
 
-        // Пружинная анимация карточки при обновлении после удара
+        // Анимация карточки при обновлении
         if animated {
             UIView.animate(withDuration: 0.12, delay: 0, options: .curveEaseIn, animations: {
                 self.goalCardView.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
@@ -437,17 +445,17 @@ final class BattleViewController: UIViewController {
     private func formatCurrency(_ value: Double) -> String {
         let fmt = NumberFormatter()
         fmt.numberStyle = .decimal
-        fmt.groupingSeparator = ","
+        fmt.groupingSeparator = " "
         fmt.maximumFractionDigits = 0
         return (fmt.string(from: NSNumber(value: value)) ?? "\(Int(value))") + "₽"
     }
 
-    // MARK: - Save Money (игрок атакует врага)
+    // MARK: - Сохранение средств (Игрок атакует врага)
 
     @objc private func saveMoneyTapped() {
         animateButtonRelease(saveMoneyButton)
-        showAmountMenu(title: "Save Money ⚔️",
-                       subtitle: "How much did you save?",
+        showAmountMenu(title: "Накопить ⚔️",
+                       subtitle: "Сколько вы отложили?",
                        presets: [500, 1000, 2500, 5000]) { [weak self] amount in
             guard let self = self else { return }
             self.currentAmount = min(self.targetAmount, self.currentAmount + amount)
@@ -455,12 +463,12 @@ final class BattleViewController: UIViewController {
         }
     }
 
-    // MARK: - Track Spending (монстр атакует игрока)
+    // MARK: - Учет расходов (Враг атакует игрока)
 
     @objc private func trackSpendingTapped() {
         animateButtonRelease(trackSpendingButton)
-        showAmountMenu(title: "Track Spending 💸",
-                       subtitle: "How much did you spend?",
+        showAmountMenu(title: "Расход 💸",
+                       subtitle: "Сколько вы потратили?",
                        presets: [500, 1000, 2500, 5000]) { [weak self] amount in
             guard let self = self else { return }
             self.currentAmount = max(0, self.currentAmount - amount)
@@ -468,7 +476,7 @@ final class BattleViewController: UIViewController {
         }
     }
 
-    // MARK: - Amount Menu
+    // MARK: - Меню выбора суммы (Amount Menu)
 
     private func showAmountMenu(title: String, subtitle: String,
                                  presets: [Int], completion: @escaping (Double) -> Void) {
@@ -478,42 +486,42 @@ final class BattleViewController: UIViewController {
         for preset in presets {
             let fmt = NumberFormatter()
             fmt.numberStyle = .decimal
-            fmt.groupingSeparator = ","
+            fmt.groupingSeparator = " "
             let label = fmt.string(from: NSNumber(value: preset)) ?? "\(preset)"
             alert.addAction(UIAlertAction(title: "\(label)₽", style: .default) { _ in
                 completion(Double(preset))
             })
         }
 
-        alert.addAction(UIAlertAction(title: "Custom amount…", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: "Своя сумма…", style: .default) { [weak self] _ in
             self?.showCustomAmountInput(completion: completion)
         })
 
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
 
-        // Зелёный tint для кнопок
+        // Цветовой акцент для кнопок
         alert.view.tintColor = UIColor(red: 37/255, green: 163/255, blue: 115/255, alpha: 1)
         present(alert, animated: true)
     }
 
     private func showCustomAmountInput(completion: @escaping (Double) -> Void) {
-        let alert = UIAlertController(title: "Enter amount", message: nil, preferredStyle: .alert)
+        let alert = UIAlertController(title: "Введите сумму", message: nil, preferredStyle: .alert)
         alert.addTextField { tf in
-            tf.placeholder = "Amount in ₽"
+            tf.placeholder = "Сумма в ₽"
             tf.keyboardType = .numberPad
         }
         alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
             if let text = alert.textFields?.first?.text,
-               let val = Double(text.replacingOccurrences(of: ",", with: "")), val > 0 {
+               let val = Double(text.replacingOccurrences(of: " ", with: "")), val > 0 {
                 completion(val)
             }
         })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
         alert.view.tintColor = UIColor(red: 37/255, green: 163/255, blue: 115/255, alpha: 1)
         present(alert, animated: true)
     }
 
-    // MARK: - Animations
+    // MARK: - Анимации (Animations)
 
     @objc private func backTapped() { dismiss(animated: true) }
 
@@ -532,7 +540,7 @@ final class BattleViewController: UIViewController {
         }
     }
 
-    /// Игрок атакует врага (Save Money) — переключает спрайт на player_attack (меч горизонтально)
+    // Анимация атаки игрока
     private func performPlayerAttack() {
         guard !isAnimating else { return }
         isAnimating = true
@@ -547,22 +555,22 @@ final class BattleViewController: UIViewController {
         UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn) {
             self.playerImageView.transform = CGAffineTransform(translationX: 55, y: -8).scaledBy(x: 1.12, y: 1.12)
         } completion: { _ in
-            // Вспышка удара
+            // Визуальный эффект удара
             self.flashSlash()
 
-            // 3. Враг получает урон — трясётся + мигает
+            // 3. Враг получает урон
             UIView.animate(withDuration: 0.08, animations: {
                 self.enemyImageView.transform = CGAffineTransform(translationX: 30, y: -8).rotated(by: 0.2)
                 self.enemyImageView.alpha = 0.3
             }) { _ in
-                // 4. Возврат на исходную
+                // 4. Возврат на исходную позицию
                 UIView.animate(withDuration: 0.4, delay: 0.05, usingSpringWithDamping: 0.5,
                                initialSpringVelocity: 0.5, options: .curveEaseOut) {
                     self.playerImageView.transform = .identity
                     self.enemyImageView.transform = .identity
                     self.enemyImageView.alpha = 1.0
                 } completion: { _ in
-                    // Возврат спрайта
+                    // Возврат спрайта покоя
                     UIView.transition(with: self.playerImageView, duration: 0.2, options: .transitionCrossDissolve) {
                         self.playerImageView.image = UIImage(named: "player_m")
                     }
@@ -573,13 +581,13 @@ final class BattleViewController: UIViewController {
         }
     }
 
-    /// Монстр атакует игрока (Track Spending) — враг набегает, игрок отлетает
+    // Анимация атаки врага
     private func performEnemyAttack() {
         guard !isAnimating else { return }
         isAnimating = true
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
 
-        // 1. Враг разгоняется
+        // 1. Рывок врага
         UIView.animate(withDuration: 0.15, delay: 0, options: .curveEaseIn) {
             self.enemyImageView.transform = CGAffineTransform(translationX: -50, y: -5).scaledBy(x: 1.15, y: 1.15)
         } completion: { _ in
@@ -590,7 +598,7 @@ final class BattleViewController: UIViewController {
                 self.playerImageView.transform = CGAffineTransform(translationX: -30, y: -5).rotated(by: -0.2)
                 self.playerImageView.alpha = 0.3
             }) { _ in
-                // 3. Возврат
+                // 3. Возврат на исходную позицию
                 UIView.animate(withDuration: 0.4, delay: 0.05, usingSpringWithDamping: 0.5,
                                initialSpringVelocity: 0.5, options: .curveEaseOut) {
                     self.enemyImageView.transform = .identity
@@ -604,7 +612,7 @@ final class BattleViewController: UIViewController {
         }
     }
 
-    /// Белая вспышка при ударе
+    // Белая вспышка
     private func flashSlash() {
         slashEffectView.alpha = 0.6
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {

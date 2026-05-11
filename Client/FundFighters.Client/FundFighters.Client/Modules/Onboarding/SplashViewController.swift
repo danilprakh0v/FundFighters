@@ -2,8 +2,8 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Client)
 Файл: SplashViewController.swift
-Расположение: FundFighters.Client/FundFighters.Client/Modules/Onboarding/
-Назначение: Initial loading screen with branding animation. //              Начальный экран загрузки с анимацией бренда.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Modules/Onboarding/
+Назначение: Начальный экран загрузки с анимацией бренда.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -21,7 +21,6 @@ class SplashViewController: UIViewController {
     // --- UI Элементы ---
     private let logoImageView: UIImageView = {
         let iv = UIImageView()
-        // Используем оригинальный белый логотип
         iv.image = UIImage(named: "logo_white")?.withRenderingMode(.alwaysOriginal)
         iv.contentMode = .scaleAspectFit
         iv.translatesAutoresizingMaskIntoConstraints = false
@@ -48,8 +47,6 @@ class SplashViewController: UIViewController {
             logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             
-            // УВЕЛИЧИЛ РАЗМЕР (Было 150, стало 280)
-            // Убедись, что в LaunchScreen.storyboard размеры такие же, чтобы лого не "прыгало"
             logoImageView.widthAnchor.constraint(equalToConstant: 280),
             logoImageView.heightAnchor.constraint(equalToConstant: 280)
         ])
@@ -57,26 +54,26 @@ class SplashViewController: UIViewController {
 
     // --- Анимация ---
     private func startAnimationSequence() {
-        // УВЕЛИЧИЛ ДЛИТЕЛЬНОСТЬ (Было 0.8, стало 2.0 секунды)
-        // delay: 0.2 — маленькая пауза перед началом, чтобы глаз успел сфокусироваться
+        // Анимация увеличения логотипа ("эффект дыхания")
         UIView.animate(withDuration: 2.0, delay: 0.2, options: .curveEaseInOut) {
-            
-            // Логотип плавно увеличивается ("дышит")
             self.logoImageView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-            
-            // Можно добавить легкое исчезновение к концу, если хочешь:
-            // self.logoImageView.alpha = 0.8
-            
         } completion: { _ in
-            self.goToOnboarding()
+            self.goToNextScreen()
         }
     }
 
-    private func goToOnboarding() {
-        let nextVC = EntryAnimationViewController()
+    private func goToNextScreen() {
+        let nextVC: UIViewController
+        
+        if TokenManager.shared.hasToken {
+            nextVC = MainTabBarController()
+        } else {
+            nextVC = EntryAnimationViewController()
+        }
+        
         guard let window = view.window else { return }
         
-        // Медленный переход (1.0 секунда) для большего наслаждения эффектом
+        // Плавный переход к следующему экрану
         UIView.transition(with: window, duration: 1.0, options: .transitionCrossDissolve, animations: {
             window.rootViewController = nextVC
         }, completion: nil)

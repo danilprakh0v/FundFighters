@@ -2,20 +2,20 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Client)
 Файл: ReportsViewController.swift
-Расположение: FundFighters.Client/FundFighters.Client/Modules/Reports/
-Назначение: ЭКРАН ОТЧЕТОВ (Screen 9). Визуализация расходов по категориям.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Modules/Reports/
+Назначение: Экран отчетов. Визуализация расходов по категориям.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
-Дата создания: 15.03.2026
+Дата создания: 04.02.2026
 ===============================================================================
 */
 
 import UIKit
 
-// MARK: - Design Tokens
+// MARK: - Токены дизайна (ReportsDT)
 
-private enum DT {
+private enum ReportsDT {
     static let accentTeal   = UIColor(red: 46/255,  green: 166/255, blue: 155/255, alpha: 1.0)
     static let accentGreen  = UIColor(red: 30/255,  green: 140/255, blue: 98/255,  alpha: 1.0)
     static let background   = UIColor(red: 240/255, green: 240/255, blue: 236/255, alpha: 1.0)
@@ -23,13 +23,13 @@ private enum DT {
     static let pillInactive = UIColor(red: 220/255, green: 220/255, blue: 216/255, alpha: 1.0)
 }
 
-// MARK: - Green Circle Button (local)
+// MARK: - Вспомогательная кнопка (Зеленый круг)
 
 private final class ReportsGreenCircleButton: UIButton {
     init(iconName: String) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = DT.accentTeal
+        backgroundColor = ReportsDT.accentTeal
         setImage(
             UIImage(systemName: iconName,
                     withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .bold)),
@@ -49,13 +49,13 @@ private final class ReportsGreenCircleButton: UIButton {
 
 final class ReportsViewController: UIViewController {
 
-    // MARK: - Properties
+    // MARK: - Свойства
 
     private let viewModel = DashboardViewModel()
 
-    // MARK: - UI Elements
+    // MARK: - UI Элементы
 
-    // Navigation bar
+    // Панель навигации
     private lazy var backButton: ReportsGreenCircleButton = {
         let b = ReportsGreenCircleButton(iconName: "chevron.left")
         b.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
@@ -72,17 +72,17 @@ final class ReportsViewController: UIViewController {
         return l
     }()
 
-    // Section title
+    // Заголовок секции
     private let sectionTitleLabel: UILabel = {
         let l = UILabel()
-        l.text          = "Expenses Type"
+        l.text          = "Тип расходов"
         l.font          = DS.golosBold(22)
         l.textColor     = DS.textPrimary
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
-    // Period switcher container
+    // Контейнер выбора периода
     private let periodContainer: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -91,7 +91,7 @@ final class ReportsViewController: UIViewController {
 
     private let periodLabel: UILabel = {
         let l = UILabel()
-        l.text          = "November"
+        l.text          = "Ноябрь"
         l.font          = .systemFont(ofSize: 15, weight: .semibold)
         l.textColor     = .label
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -120,7 +120,7 @@ final class ReportsViewController: UIViewController {
 
     private let yearButton: UIButton = {
         var cfg = UIButton.Configuration.plain()
-        cfg.title = "Year"
+        cfg.title = "Год"
         cfg.image = UIImage(systemName: "chevron.up.chevron.down",
                             withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold))
         cfg.imagePlacement = .trailing
@@ -136,24 +136,24 @@ final class ReportsViewController: UIViewController {
         return b
     }()
 
-    // Chart view (reuse ExpenseChartViewUIKit)
+    // График расходов
     private let expenseChartView = ExpenseChartViewUIKit()
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = DT.background
+        view.backgroundColor = ReportsDT.background
         setupLayout()
         loadData()
     }
 
-    // MARK: - Layout
+    // MARK: - Верстка
 
     private func setupLayout() {
         expenseChartView.translatesAutoresizingMaskIntoConstraints = false
 
-        // Period switcher: [←] [November] [→]  ————  Year ↕
+        // Стек управления месяцем: [←] [Ноябрь] [→]
         let monthNavStack = UIStackView(arrangedSubviews: [prevButton, periodLabel, nextButton])
         monthNavStack.axis      = .horizontal
         monthNavStack.spacing   = 8
@@ -164,6 +164,7 @@ final class ReportsViewController: UIViewController {
         periodSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         periodSpacer.translatesAutoresizingMaskIntoConstraints = false
 
+        // Общий стек периода: [Месяц] [Пробел] [Год]
         let periodRowStack = UIStackView(arrangedSubviews: [monthNavStack, periodSpacer, yearButton])
         periodRowStack.axis      = .horizontal
         periodRowStack.spacing   = 8
@@ -176,27 +177,27 @@ final class ReportsViewController: UIViewController {
         let safe = view.safeAreaLayoutGuide
 
         NSLayoutConstraint.activate([
-            // Back button
+            // Кнопка назад
             backButton.topAnchor.constraint(equalTo: safe.topAnchor, constant: 8),
             backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             backButton.widthAnchor.constraint(equalToConstant: 36),
             backButton.heightAnchor.constraint(equalToConstant: 36),
 
-            // Nav title
+            // Заголовок навигации
             navTitleLabel.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
             navTitleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
-            // Section title
+            // Заголовок секции
             sectionTitleLabel.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 20),
             sectionTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             sectionTitleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
-            // Period row
+            // Строка периода
             periodRowStack.topAnchor.constraint(equalTo: sectionTitleLabel.bottomAnchor, constant: 8),
             periodRowStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             periodRowStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
-            // Chart
+            // График
             expenseChartView.topAnchor.constraint(equalTo: periodRowStack.bottomAnchor, constant: 20),
             expenseChartView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             expenseChartView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
@@ -204,23 +205,22 @@ final class ReportsViewController: UIViewController {
         ])
     }
 
-    // MARK: - Data
+    // MARK: - Данные
 
     private func loadData() {
         viewModel.loadDashboard()
         viewModel.onDataLoaded = { [weak self] in
             DispatchQueue.main.async {
-                // We always call configure to show the mock data for now
                 self?.expenseChartView.configure(categories: self?.viewModel.dashboard?.expenseCategories ?? [])
             }
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Обработка действий
 
     @objc private func closeTapped() {
         if let tabBar = self.tabBarController as? MainTabBarController {
-            tabBar.switchToTab(2) // Switch to Dashboard
+            tabBar.switchToTab(2) // Переключение на главный экран (Dashboard)
         } else {
             dismiss(animated: true)
         }

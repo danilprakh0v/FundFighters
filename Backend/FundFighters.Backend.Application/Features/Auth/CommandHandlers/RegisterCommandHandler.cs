@@ -1,10 +1,10 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Backend Service)
+Проект: FundFighters (iOS UIKit [Backend Service])
 Файл: RegisterCommandHandler.cs
-Расположение: FundFighters.Backend.Application/Features/Auth/CommandHandlers/
-Назначение: CQRS handler для обработки команды регистрации новой учетной записи.
-            Валидирует данные, хеширует пароль, создает игрока и отправляет email.
+Расположение: Backend/FundFighters.Backend.Application/Features/Auth/CommandHandlers/
+Назначение: Обработчик команды регистрации новой учетной записи игрока.
+            Валидирует данные, хеширует пароль и создает запись в БД.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -22,13 +22,9 @@ using Microsoft.Extensions.Logging;
 namespace FundFighters.Backend.Application.Features.Auth.CommandHandlers;
 
 /// <summary>
-/// CQRS handler для обработки команды регистрации новой учетной записи игрока.
-/// Валидирует входные данные, создает нового игрока, хеширует пароль с BCrypt,
-/// генерирует код верификации и отправляет email с подтверждением.
-/// 
-/// CQRS handler to process player registration command.
-/// Validates input, creates new player account, hashes password with BCrypt,
-/// generates verification code and sends confirmation email.
+/// Обработчик регистрации нового игрока.
+/// Выполняет проверку существования email, хеширование пароля через BCrypt
+/// и инициализацию начального состояния игрового аккаунта.
 /// </summary>
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
 {
@@ -50,7 +46,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
     {
         try
         {
-            // Validate input
+            // Проверка обязательных полей
             if (string.IsNullOrWhiteSpace(request.Username) ||
                 string.IsNullOrWhiteSpace(request.Email) ||
                 string.IsNullOrWhiteSpace(request.Password))
@@ -62,7 +58,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
                 };
             }
 
-            // Check if email already exists
+            // Проверка на существование игрока с таким email
             var existingPlayer = await _repository.GetPlayerByEmailAsync(request.Email);
             if (existingPlayer != null)
             {
@@ -74,13 +70,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
                 };
             }
 
-            // Generate verification code (6 digits)
+            // Генерация 6-значного кода подтверждения
             var verificationCode = GenerateVerificationCode();
 
-            // Hash the password
+            // Хеширование пароля
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-            // Create new player
+            // Создание новой сущности игрока с начальными параметрами
             var player = new Player
             {
                 Username = request.Username,
@@ -96,11 +92,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // Save player to database
+            // Сохранение игрока в базе данных
             await _repository.AddPlayerAsync(player);
             await _repository.SaveChangesAsync();
 
-            // Send verification email
+            // Отправка email с кодом верификации
             try
             {
                 await _emailService.SendVerificationCodeAsync(request.Email, verificationCode);
@@ -109,7 +105,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to send verification email to {request.Email}: {ex.Message}");
-                // Don't fail registration if email send fails, but log it
+                // Не прерываем регистрацию, если возникла ошибка при отправке почты
             }
 
             return new RegisterResponse
@@ -128,7 +124,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
                 _logger.LogError($"Inner exception: {ex.InnerException.Message}");
             }
             
-            // Check if it's a database connection error
+            // Проверка на ошибку подключения к БД
             if (ex.Message.Contains("connection") || ex.Message.Contains("Connection refused") || 
                 ex.GetType().Name.Contains("Npgsql"))
             {
@@ -148,7 +144,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
     }
 
     /// <summary>
-    /// Generates a random 6-digit verification code.
+    /// Генерация случайного 6-значного кода верификации.
     /// </summary>
     private static string GenerateVerificationCode()
     {

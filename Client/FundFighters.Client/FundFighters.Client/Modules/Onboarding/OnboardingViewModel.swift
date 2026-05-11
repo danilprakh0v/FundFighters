@@ -2,8 +2,8 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Client)
 Файл: OnboardingViewModel.swift
-Расположение: FundFighters.Client/FundFighters.Client/Modules/Onboarding/
-Назначение: ViewModel для onboarding экрана новых пользователей.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Modules/Onboarding/
+Назначение: ViewModel для экрана онбординга новых пользователей.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -16,7 +16,7 @@ import Combine
 
 final class OnboardingViewModel {
     
-    // MARK: - Properties
+    // MARK: - Свойства
     
     var currentStep = 0
     let totalSteps = 4
@@ -25,8 +25,9 @@ final class OnboardingViewModel {
     var onOnboardingFinished: (() -> Void)?
     var onError: ((String) -> Void)?
     
-    // MARK: - Methods
+    // MARK: - Методы
     
+    /// Переход к следующему шагу онбординга
     func nextStep() {
         if currentStep < totalSteps - 1 {
             currentStep += 1
@@ -36,6 +37,7 @@ final class OnboardingViewModel {
         }
     }
     
+    /// Возврат к предыдущему шагу онбординга
     func previousStep() {
         if currentStep > 0 {
             currentStep -= 1
@@ -43,18 +45,20 @@ final class OnboardingViewModel {
         }
     }
     
+    /// Завершение процесса онбординга
     func completeOnboarding() {
-        // Mark onboarding as completed in UserDefaults
+        // Сохранение флага завершения онбординга в настройках пользователя
         UserDefaults.standard.set(true, forKey: "isOnboardingCompleted")
         onOnboardingFinished?()
     }
     
+    /// Пропуск онбординга
     func skipOnboarding() {
         completeOnboarding()
     }
 }
 
-// MARK: - Onboarding Step
+// MARK: - Шаг онбординга
 struct OnboardingStep {
     let title: String
     let description: String
@@ -62,29 +66,30 @@ struct OnboardingStep {
     let actionButtonText: String
 }
 
+// Константные данные для шагов обучения
 let onboardingSteps = [
     OnboardingStep(
-        title: "Welcome to FundFighters",
-        description: "Gamify your savings with epic financial battles!",
+        title: "Добро пожаловать в FundFighters",
+        description: "Геймифицируйте свои сбережения в эпических финансовых битвах!",
         imageName: "star.fill",
-        actionButtonText: "Next"
+        actionButtonText: "Далее"
     ),
     OnboardingStep(
-        title: "Set Your Goals",
-        description: "Create savings goals and transform them into enemies to defeat!",
+        title: "Ставьте цели",
+        description: "Создавайте финансовые цели и превращайте их во врагов для победы!",
         imageName: "target",
-        actionButtonText: "Next"
+        actionButtonText: "Далее"
     ),
     OnboardingStep(
-        title: "Track Your Progress",
-        description: "Watch your balance grow as you defeat your financial enemies.",
+        title: "Следите за прогрессом",
+        description: "Наблюдайте, как растет ваш баланс, пока вы побеждаете финансовых врагов.",
         imageName: "chart.bar.fill",
-        actionButtonText: "Next"
+        actionButtonText: "Далее"
     ),
     OnboardingStep(
-        title: "Ready to Battle?",
-        description: "You're all set! Start your financial journey now.",
+        title: "Готовы к битве?",
+        description: "Все настроено! Начните свое финансовое путешествие прямо сейчас.",
         imageName: "bolt.fill",
-        actionButtonText: "Let's Go!"
+        actionButtonText: "Погнали!"
     )
 ]

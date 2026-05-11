@@ -2,8 +2,8 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Client)
 Файл: GameModels.swift
-Расположение: FundFighters.Client/FundFighters.Client/Models/
-Назначение: DTOs for Game logic and User Dashboard. //              DTO для логики игры и панели управления пользователя.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Models/
+Назначение: Модели данных для игровой логики и профиля пользователя.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -13,7 +13,7 @@
 
 import Foundation
 
-// MARK: - User Profile
+// MARK: - Профиль пользователя
 struct UserProfile: Decodable {
     let id: UUID
     let username: String
@@ -25,13 +25,13 @@ struct UserProfile: Decodable {
     let experience: Int
 }
 
-// MARK: - Onboarding
+// MARK: - Состояние онбординга
 struct OnboardingState: Codable {
     var isNewUser: Bool
     var completedSteps: [String]
 }
 
-// MARK: - Dashboard Data
+// MARK: - Сводка Dashboard
 struct DashboardSummary: Decodable {
     let currentBalance: Double
     let monthlyIncome: Double
@@ -53,7 +53,7 @@ enum TransactionType: String, Decodable {
     case expense
 }
 
-// MARK: - Budgeting
+// MARK: - Бюджетирование
 struct BudgetCategory: Decodable, Identifiable {
     let id: UUID
     let name: String

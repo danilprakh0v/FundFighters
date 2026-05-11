@@ -107,14 +107,19 @@ public interface IGameRepository
     Task<List<Battle>> GetBattlesByPlayerIdAsync(string playerId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Получает все категории расходов игрока.
-    /// 
-    /// Retrieves all expense categories for a player.
+    /// Получает категорию расходов игрока по ID.
     /// </summary>
-    /// <param name="playerId">ID игрока (Player ID)</param>
-    /// <param name="cancellationToken">Токен отмены (Cancellation token)</param>
-    /// <returns>Список категорий расходов (List of expense categories)</returns>
     Task<List<ExpenseCategory>> GetExpenseCategoriesByPlayerIdAsync(string playerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Получает транзакцию по ID.
+    /// </summary>
+    Task<Transaction?> GetTransactionByIdAsync(int transactionId);
+
+    /// <summary>
+    /// Удаляет транзакцию.
+    /// </summary>
+    void DeleteTransaction(Transaction transaction);
 
     /// <summary>
     /// Добавляет нового игрока в репозиторий.
@@ -140,5 +145,14 @@ public interface IGameRepository
     /// Persists all changes made to entities to the database.
     /// </summary>
     Task SaveChangesAsync();
+
+    /// <summary>
+    /// Создаёт начальные данные для нового игрока после верификации email.
+    /// Включает цель сбережения и примеры транзакций.
+    /// 
+    /// Seeds initial data for a new player after email verification.
+    /// Includes a savings goal and sample transactions.
+    /// </summary>
+    Task SeedPlayerDataAsync(int playerId);
 }
 

@@ -1,9 +1,9 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Client)
+Проект: FundFighters (iOS UIKit [Client/Backend Service])
 Файл: DashboardViewControllerUIKit.swift
-Расположение: FundFighters.Client/FundFighters.Client/Modules/Dashboard/
-Назначение: Главный экран Dashboard — вертикальный скролл + горизонтальные страницы.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Modules/Dashboard/
+Назначение: Главный экран приложения (Dashboard)
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -15,15 +15,18 @@ import UIKit
 
 final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate {
 
+    // MARK: - Свойства (Properties)
+
     private let viewModel = DashboardViewModel()
     private var currentPage: Int = 0
 
-    // Локальный стейт накопления (синхронизируется с BattleVC)
-    private var savingsCurrentAmount: Double = 23250
-    private var savingsTargetAmount: Double  = 62000
-    private var savingsGoalName: String      = "Playstation 5 Slim"
+    // Состояние накопления (синхронизируется с BattleVC)
+    private var savingsCurrentAmount: Double = 0
+    private var savingsTargetAmount: Double  = 0
+    private var savingsGoalName: String      = "Нет активной цели"
 
-    // MARK: - UI
+    // MARK: - UI Элементы
+
     private let scrollView: UIScrollView = {
         let sv = UIScrollView()
         sv.alwaysBounceVertical = true
@@ -38,7 +41,8 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         return v
     }()
 
-    // MARK: Header components
+    // MARK: Компоненты заголовка
+
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(named: "avatar_placeholder")
@@ -51,7 +55,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
     private let welcomeLabel: UILabel = {
         let l = UILabel()
-        l.text = "Welcome back!"
+        l.text = "С возвращением!"
         l.font = DS.golosSemi(14)
         l.textColor = DS.accent
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -60,7 +64,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
     private let nameLabel: UILabel = {
         let l = UILabel()
-        l.text = "Fighter"
+        l.text = "Боец"
         l.font = DS.golosBold(22)
         l.textColor = DS.textPrimary
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -75,12 +79,22 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         return b
     }()
 
-    // MARK: Cards
+    private let logoutButton: UIButton = {
+        let b = UIButton(type: .system)
+        let cfg = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        b.setImage(UIImage(systemName: "rectangle.portrait.and.arrow.right", withConfiguration: cfg), for: .normal)
+        b.tintColor = .systemRed.withAlphaComponent(0.7)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        return b
+    }()
+
+    // MARK: Карточки
+
     private let balanceCard = BalanceCardView()
 
     private let goalsTitleLabel: UILabel = {
         let l = UILabel()
-        l.text = "Saving Goals / Enemies"
+        l.text = "Цели / Враги"
         l.font = DS.golosBold(20)
         l.textColor = DS.textPrimary
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -89,7 +103,8 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
     private let savingsGoalCard = SavingsGoalCardView()
 
-    // MARK: Horizontal paging
+    // MARK: Горизонтальный скролл (Paging)
+
     private let pagingContainer: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -144,7 +159,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
     private let refreshControl = UIRefreshControl()
 
-    // MARK: - Lifecycle
+    // MARK: - Жизненный цикл (Lifecycle)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -153,13 +168,31 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         setupActions()
         bindViewModel()
         
-        // Show mocks immediately while loading
+        // Отображение начальных данных во время загрузки
         updateUI()
         
         viewModel.loadDashboard()
     }
 
-    // MARK: - Layout
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Обновление данных при появлении экрана для синхронизации бюджета
+        viewModel.loadDashboard()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !UserManager.shared.hasSeenTutorial {
+            let tutorialVC = TutorialViewController()
+            tutorialVC.modalPresentationStyle = .overFullScreen
+            tutorialVC.modalTransitionStyle = .crossDissolve
+            present(tutorialVC, animated: true) {
+                UserManager.shared.hasSeenTutorial = true
+            }
+        }
+    }
+
+    // MARK: - Настройка верстки (Layout)
 
     private func setupLayout() {
         view.addSubview(scrollView)
@@ -170,7 +203,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         welcomeStack.spacing = 2
         welcomeStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let headerStack = UIStackView(arrangedSubviews: [avatarImageView, welcomeStack, UIView(), notifButton])
+        let headerStack = UIStackView(arrangedSubviews: [avatarImageView, welcomeStack, UIView(), notifButton, logoutButton])
         headerStack.axis = .horizontal
         headerStack.alignment = .center
         headerStack.spacing = 12
@@ -180,11 +213,11 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             .forEach { contentView.addSubview($0) }
 
         pagingContainer.addSubview(horizontalScrollView)
+        pagingContainer.addSubview(leftArrowButton)
+        pagingContainer.addSubview(rightArrowButton)
+        
         pagingContainer.clipsToBounds = true
         horizontalScrollView.addSubview(horizontalStack)
-
-        contentView.addSubview(leftArrowButton)
-        contentView.addSubview(rightArrowButton)
 
         let screenWidth = UIScreen.main.bounds.width
         let pad = DS.screenPad
@@ -205,11 +238,13 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
         scrollView.refreshControl = refreshControl
 
+        let safe = view.safeAreaLayoutGuide
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: safe.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
@@ -217,7 +252,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
-            // Header
+            // Заголовок (Header)
             headerStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             headerStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             headerStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
@@ -225,58 +260,91 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             avatarImageView.heightAnchor.constraint(equalToConstant: 44),
             notifButton.widthAnchor.constraint(equalToConstant: 40),
             notifButton.heightAnchor.constraint(equalToConstant: 40),
+            logoutButton.widthAnchor.constraint(equalToConstant: 40),
+            logoutButton.heightAnchor.constraint(equalToConstant: 40),
 
-            // Balance Card
+            // Карточка баланса
             balanceCard.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 20),
             balanceCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             balanceCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
 
-            // Goals title
+            // Заголовок целей
             goalsTitleLabel.topAnchor.constraint(equalTo: balanceCard.bottomAnchor, constant: 24),
             goalsTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
 
-            // Goals card
+            // Карточка накоплений
             savingsGoalCard.topAnchor.constraint(equalTo: goalsTitleLabel.bottomAnchor, constant: 12),
             savingsGoalCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: pad),
             savingsGoalCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
 
-            // Paging container — минимальная высота гарантирует видимость контента
+            // Контейнер пейджинга
             pagingContainer.topAnchor.constraint(equalTo: savingsGoalCard.bottomAnchor, constant: 24),
             pagingContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             pagingContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             pagingContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             pagingContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 420),
 
-            // Horizontal scroll заполняет контейнер
+            // Горизонтальный скролл
             horizontalScrollView.topAnchor.constraint(equalTo: pagingContainer.topAnchor),
             horizontalScrollView.leadingAnchor.constraint(equalTo: pagingContainer.leadingAnchor),
             horizontalScrollView.trailingAnchor.constraint(equalTo: pagingContainer.trailingAnchor),
             horizontalScrollView.bottomAnchor.constraint(equalTo: pagingContainer.bottomAnchor),
 
-            // Stack внутри scroll
+            // Стек внутри горизонтального скролла
             horizontalStack.topAnchor.constraint(equalTo: horizontalScrollView.contentLayoutGuide.topAnchor),
             horizontalStack.leadingAnchor.constraint(equalTo: horizontalScrollView.contentLayoutGuide.leadingAnchor),
             horizontalStack.trailingAnchor.constraint(equalTo: horizontalScrollView.contentLayoutGuide.trailingAnchor),
             horizontalStack.heightAnchor.constraint(equalTo: horizontalScrollView.frameLayoutGuide.heightAnchor),
 
-            // Стрелки по бокам — тонкие и вписанные в боковые 20pt отступы
-            leftArrowButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            // Кнопки навигации (стрелки)
+            leftArrowButton.leadingAnchor.constraint(equalTo: pagingContainer.leadingAnchor),
             leftArrowButton.centerYAnchor.constraint(equalTo: pagingContainer.centerYAnchor),
             leftArrowButton.widthAnchor.constraint(equalToConstant: 20),
             leftArrowButton.heightAnchor.constraint(equalToConstant: 100),
 
-            rightArrowButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            rightArrowButton.trailingAnchor.constraint(equalTo: pagingContainer.trailingAnchor),
             rightArrowButton.centerYAnchor.constraint(equalTo: pagingContainer.centerYAnchor),
             rightArrowButton.widthAnchor.constraint(equalToConstant: 20),
             rightArrowButton.heightAnchor.constraint(equalToConstant: 100),
         ])
     }
 
-    // MARK: - Actions & Binding
+    // MARK: - Обработка действий (Actions) & Привязка (Binding)
 
     private func setupActions() {
         refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        logoutButton.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
         savingsGoalCard.onFightTapped = { [weak self] in self?.navigateToBattle() }
+        
+        recentActivityView.onDeleteTransaction = { [weak self] id in
+            self?.handleDeleteTransaction(id: id)
+        }
+    }
+
+    @objc private func handleLogout() {
+        let alert = UIAlertController(title: "Выход", message: "Вы уверены, что хотите выйти?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Выйти", style: .destructive, handler: { _ in
+            UserManager.shared.logout()
+            guard let window = self.view.window else { return }
+            UIView.transition(with: window, duration: 0.5, options: .transitionFlipFromRight, animations: {
+                window.rootViewController = SplashViewController()
+            }, completion: nil)
+        }))
+        present(alert, animated: true)
+    }
+
+    private func handleDeleteTransaction(id: String) {
+        APIService.shared.deleteTransaction(transactionId: id) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.viewModel.loadDashboard()
+                case .failure(let error):
+                    print("Error deleting transaction: \(error)")
+                }
+            }
+        }
     }
 
     private func bindViewModel() {
@@ -291,51 +359,61 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         }
     }
 
-    // MARK: - Update UI
+    // MARK: - Обновление UI
 
     private func updateUI() {
         refreshControl.endRefreshing()
 
-        // Header  — динамическое имя из API
-        if let username = viewModel.dashboard?.userInfo.username {
-            nameLabel.text = username
-        }
+        // Заголовок
+        let username = viewModel.dashboard?.userInfo.username ?? UserManager.shared.session.username
+        nameLabel.text = username
 
-        // Balance Card
+        // Карточка баланса
         if let balance = viewModel.dashboard?.balanceInfo {
-            let totalStr   = formatCurrency(NSDecimalNumber(decimal: balance.totalBalance).doubleValue)
-            let incomeStr  = formatCurrency(NSDecimalNumber(decimal: balance.monthlyIncome).doubleValue)
-            let expenseStr = formatCurrency(NSDecimalNumber(decimal: balance.monthlyExpense).doubleValue)
             let total      = NSDecimalNumber(decimal: balance.totalBalance).doubleValue
             let income     = NSDecimalNumber(decimal: balance.monthlyIncome).doubleValue
             let expense    = NSDecimalNumber(decimal: balance.monthlyExpense).doubleValue
-            let incPct     = total > 0 ? String(format: "%.0f%%", (income / total) * 100) : "—"
-            let expPct     = total > 0 ? String(format: "%.0f%%", (expense / total) * 100) : "—"
+            let totalStr   = formatCurrency(total)
+            let incomeStr  = formatCurrency(income)
+            let expenseStr = formatCurrency(expense)
+            let incPct     = total > 0 ? String(format: "%.0f%%", (income / total) * 100) : "0%"
+            let expPct     = total > 0 ? String(format: "%.0f%%", (expense / total) * 100) : "0%"
             balanceCard.configure(balance: totalStr, income: incomeStr, expense: expenseStr,
                                   isHidden: false, incomePercent: incPct, expensePercent: expPct)
         } else {
-            // Моковые данные, пока API не вернул ответ
-            balanceCard.configure(balance: "145,000.99₽", income: "100,000₽", expense: "45,000₽",
-                                  isHidden: false, incomePercent: "27%", expensePercent: "12%")
+            // Данные для нового пользователя
+            let session = UserManager.shared.session
+            balanceCard.configure(
+                balance: formatCurrency(session.totalBalance),
+                income: formatCurrency(session.monthlyIncome),
+                expense: formatCurrency(session.monthlyExpense),
+                isHidden: false,
+                incomePercent: "0%",
+                expensePercent: "0%"
+            )
         }
 
-        // Savings Goals
+        // Цели накопления
         if let goal = viewModel.dashboard?.activeGoal {
             savingsCurrentAmount = NSDecimalNumber(decimal: goal.currentAmount).doubleValue
             savingsTargetAmount  = NSDecimalNumber(decimal: goal.targetAmount).doubleValue
             savingsGoalName      = goal.goalName
+        } else {
+            savingsCurrentAmount = UserManager.shared.session.savingsCurrent
+            savingsTargetAmount  = UserManager.shared.session.savingsTarget
+            savingsGoalName      = UserManager.shared.session.savingsGoalName
         }
         refreshSavingsCard()
 
-        // Recent Activity
+        // Недавняя активность
         let transactions = viewModel.dashboard?.recentTransactions ?? []
         recentActivityView.configure(transactions: transactions)
 
-        // Expense Chart
+        // График расходов
         let categories = viewModel.dashboard?.expenseCategories ?? []
         expenseChartView.configure(categories: categories)
 
-        // Battle
+        // Битвы
         let battles = viewModel.dashboard?.recentBattles ?? []
         battleCardView.configure(battles: battles)
 
@@ -345,7 +423,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     private func formatCurrency(_ value: Double) -> String {
         let fmt = NumberFormatter()
         fmt.numberStyle = .decimal
-        fmt.groupingSeparator = ","
+        fmt.groupingSeparator = " "
         fmt.maximumFractionDigits = 2
         fmt.minimumFractionDigits = 0
         return (fmt.string(from: NSNumber(value: value)) ?? "\(value)") + "₽"
@@ -383,7 +461,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         present(battleVC, animated: true)
     }
 
-    // MARK: - Paging
+    // MARK: - Пейджинг (Paging)
 
     @objc private func pageLeft() {
         guard currentPage > 0 else { return }

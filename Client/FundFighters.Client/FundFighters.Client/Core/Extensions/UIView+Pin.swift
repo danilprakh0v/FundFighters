@@ -64,4 +64,14 @@ extension UIView {
             centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
+    
+    // MARK: - Animations
+    
+    func shake() {
+        let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        animation.timingFunction = CAMediaTimingFunction(name: .linear)
+        animation.duration = 0.4
+        animation.values = [-10.0, 10.0, -10.0, 10.0, -5.0, 5.0, -2.5, 2.5, 0.0 ]
+        layer.add(animation, forKey: "shake")
+    }
 }

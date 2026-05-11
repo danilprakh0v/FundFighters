@@ -18,6 +18,8 @@ final class RecentActivityViewUIKit: UIView {
     // MARK: - State
     private var allTransactions: [TransactionResponse] = []
     private var selectedDate: Date = Calendar.current.startOfDay(for: Date())
+    
+    var onDeleteTransaction: ((String) -> Void)?
 
     // MARK: - UI
 
@@ -194,14 +196,10 @@ final class RecentActivityViewUIKit: UIView {
 
     // MARK: - Configure
 
-    /// Принимает реальные транзакции с бэкенда; если пустой — показывает мок
+    /// Принимает реальные транзакции с бэкенда
     func configure(transactions: [TransactionResponse]) {
         allTransactions = transactions
-        if transactions.isEmpty {
-            showMockData()
-        } else {
-            applyDateFilter()
-        }
+        applyDateFilter()
     }
 
     private func applyDateFilter() {
@@ -211,26 +209,12 @@ final class RecentActivityViewUIKit: UIView {
         renderRows(shown)
     }
 
-    private func showMockData() {
-        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        emptyLabel.isHidden = true
-
-        let rows: [(String, String, String, String, Bool, MockLogo)] = [
-            ("Yandex Plus Subscription", "Subscription", "21:55", "-400₽", false, .yandex),
-            ("Spotify Subscription",     "Subscription", "12:12", "-700₽", false, .spotify),
-            ("UI/UX Designer Salary",    "Transfer",     "11:39", "+300₽", true,  .salary)
-        ]
-
-        for (i, r) in rows.enumerated() {
-            stackView.addArrangedSubview(makeMockRow(title: r.0, cat: r.1, time: r.2, amount: r.3, isIncome: r.4, logo: r.5))
-            if i < rows.count - 1 { stackView.addArrangedSubview(makeDivider()) }
-        }
-    }
-
     private func renderRows(_ transactions: [TransactionResponse]) {
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        
+        // Показываем пустой лейбл если нет транзакций на выбранную дату
         emptyLabel.isHidden = !transactions.isEmpty
-
+        
         for (i, tx) in transactions.enumerated() {
             stackView.addArrangedSubview(makeRow(tx))
             if i < transactions.count - 1 { stackView.addArrangedSubview(makeDivider()) }
@@ -372,7 +356,20 @@ final class RecentActivityViewUIKit: UIView {
                                         bg: DS.accent.withAlphaComponent(0.8))
         }
         return buildRow(logoView: logoView, title: tx.description.isEmpty ? tx.category : tx.description,
-                        cat: tx.category, time: time, amount: amtText, isIncome: isIncome)
+                        cat: tx.category, time: time, amount: amtText, isIncome: isIncome, transactionId: tx.id)
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let rowView = gesture.view, let txId = rowView.accessibilityIdentifier else { return }
+        
+        // Show delete confirmation
+        let alert = UIAlertController(title: "Delete Transaction?", message: "This will remove the transaction and update your balance.", preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+            self?.onDeleteTransaction?(txId)
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        findViewController()?.present(alert, animated: true)
     }
 
     private func makeMockLogoView(_ logo: MockLogo) -> UIView {
@@ -412,10 +409,19 @@ final class RecentActivityViewUIKit: UIView {
     }
 
     private func buildRow(logoView: UIView, title: String, cat: String,
-                          time: String, amount: String, isIncome: Bool) -> UIView {
+                          time: String, amount: String, isIncome: Bool, transactionId: String? = nil) -> UIView {
         let row = UIView()
         row.translatesAutoresizingMaskIntoConstraints = false
         row.heightAnchor.constraint(equalToConstant: 72).isActive = true
+        
+        if let id = transactionId {
+            row.tag = id.hashValue // Simple way to link, but better use a map if needed
+            let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+            row.addGestureRecognizer(longPress)
+            row.isUserInteractionEnabled = true
+            // Store ID in accessibilityIdentifier for easy retrieval
+            row.accessibilityIdentifier = id
+        }
 
         logoView.translatesAutoresizingMaskIntoConstraints = false
 

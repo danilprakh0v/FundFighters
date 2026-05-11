@@ -1,9 +1,9 @@
 /*
 ===============================================================================
-Проект: FundFighters (iOS UIKit Client)
+Проект: FundFighters (iOS UIKit [Client/Backend Service])
 Файл: NetworkManager.swift
-Расположение: FundFighters.Client/FundFighters.Client/Core/Network/
-Назначение: Generic networking singleton handling URLSessions and requests. //              Универсальный синглтон для работы с сетью и запросами URLSession.
+Расположение: Client/FundFighters.Client/FundFighters.Client/Core/Network/
+Назначение: Универсальный менеджер сетевых запросов
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -16,14 +16,16 @@ import Foundation
 final class NetworkManager {
     static let shared = NetworkManager()
     
-    // Change this to your local IP if running on device, or localhost if on Simulator
-    // iPhone Simulator -> localhost works
-    // Real Device -> Need Mac's IP (e.g., http://192.168.1.5:5217)
-    // For now using localhost for Simulator
+    // MARK: - Настройки
+    
+    // Адрес API (localhost для симулятора, IP-адрес для реального устройства)
     private let baseURL = "http://localhost:5217/api"
     
     private init() {}
     
+    // MARK: - Основные методы запросов
+    
+    // Универсальный метод для запросов с ожидаемым ответом
     func request<T: Decodable>(
         endpoint: String,
         method: String = "GET",
@@ -39,7 +41,7 @@ final class NetworkManager {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Add Auth Token if exists
+        // Добавление токена авторизации, если он существует
         if let token = TokenManager.shared.get() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -64,17 +66,14 @@ final class NetworkManager {
                 return
             }
             
-            // Try to read error message if status is not success
+            // Проверка статус-кода и обработка ошибок
             if !(200...299).contains(httpResponse.statusCode) {
                 if let data = data,
                    let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                    // Special case for 401: clear token but use server's message if possible
                     if httpResponse.statusCode == 401 {
                         TokenManager.shared.clear()
-                        DispatchQueue.main.async { completion(.failure(.serverError(message: errorResponse.message))) }
-                    } else {
-                        DispatchQueue.main.async { completion(.failure(.serverError(message: errorResponse.message))) }
                     }
+                    DispatchQueue.main.async { completion(.failure(.serverError(message: errorResponse.message))) }
                 } else if httpResponse.statusCode == 401 {
                     TokenManager.shared.clear()
                     DispatchQueue.main.async { completion(.failure(.unauthorized)) }
@@ -84,18 +83,17 @@ final class NetworkManager {
                 return
             }
 
-            
             guard let data = data else {
                 DispatchQueue.main.async { completion(.failure(.unknown)) }
                 return
             }
             
-            // Debugging log
+            // Логирование ответа (для отладки)
             if let str = String(data: data, encoding: .utf8) {
                 print("Server Response [\(endpoint)]: \(str)")
             }
             
-            // Handle Void response success
+            // Обработка успешного Void ответа
             if T.self == Void.self && (200...299).contains(httpResponse.statusCode) {
                  DispatchQueue.main.async { completion(.success(() as! T)) }
                  return
@@ -104,7 +102,7 @@ final class NetworkManager {
             do {
                 let decoder = JSONDecoder()
                 
-                // .NET DateTime format strategy
+                // Настройка декодирования даты для .NET форматов
                 let df = DateFormatter()
                 df.calendar = Calendar(identifier: .iso8601)
                 df.locale = Locale(identifier: "en_US_POSIX")
@@ -114,11 +112,10 @@ final class NetworkManager {
                     let container = try decoder.singleValueContainer()
                     let dateString = try container.decode(String.self)
                     
-                    // Try standard ISO8601 variants
                     let formats = [
-                        "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSZ", // .NET 7+ Long form
-                        "yyyy-MM-dd'T'HH:mm:ss.SSSZ",     // Generic milliseconds
-                        "yyyy-MM-dd'T'HH:mm:ssZ"          // Standard
+                        "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSZ",
+                        "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                        "yyyy-MM-dd'T'HH:mm:ssZ"
                     ]
                     
                     for format in formats {
@@ -139,6 +136,8 @@ final class NetworkManager {
             }
         }.resume()
     }
+
+    // Метод для запросов без ожидаемого тела ответа
     func requestNoResponse(
         endpoint: String,
         method: String = "GET",

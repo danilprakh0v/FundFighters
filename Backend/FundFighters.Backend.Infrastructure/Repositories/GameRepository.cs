@@ -2,9 +2,8 @@
 ===============================================================================
 Проект: FundFighters (iOS UIKit Backend Service)
 Файл: GameRepository.cs
-Расположение: FundFighters.Backend.Infrastructure/Repositories/
+Расположение: Backend/FundFighters.Backend.Infrastructure/Repositories/
 Назначение: Реализация паттерна Repository для работы с игровыми данными.
-            Обрабатывает все операции доступа к данным через Entity Framework Core.
 ===============================================================================
 Дисциплина: Курсовой проект "FundFighters"
 Автор: Прахов Данил, БПИ246
@@ -20,13 +19,7 @@ using Microsoft.EntityFrameworkCore;
 namespace FundFighters.Backend.Infrastructure.Repositories;
 
 /// <summary>
-/// Реализация интерфейса IGameRepository с использованием Entity Framework Core.
-/// Обрабатывает все операции доступа к данным для игровой системы (игроки, враги, транзакции).
-/// Предоставляет асинхронные методы для выполнения CRUD операций.
-/// 
-/// Implementation of IGameRepository using Entity Framework Core.
-/// Handles all game-related data access operations.
-/// Provides asynchronous methods for CRUD operations.
+/// Реализация интерфейса IGameRepository для работы с БД через EF Core.
 /// </summary>
 public class GameRepository : IGameRepository
 {
@@ -38,7 +31,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves a player by their ID.
+    /// Получение игрока по ID.
     /// </summary>
     public async Task<Player?> GetPlayerAsync(int playerId)
     {
@@ -48,7 +41,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves a player by their string ID.
+    /// Получение игрока по строковому ID.
     /// </summary>
     public async Task<Player?> GetPlayerByIdAsync(string playerId, CancellationToken cancellationToken = default)
     {
@@ -62,8 +55,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves a player by their email address.
-    /// Used for authentication and registration.
+    /// Получение игрока по email.
     /// </summary>
     public async Task<Player?> GetPlayerByEmailAsync(string email)
     {
@@ -72,7 +64,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves the current active enemy (first non-defeated enemy).
+    /// Получение текущего активного врага.
     /// </summary>
     public async Task<Enemy?> GetCurrentEnemyAsync()
     {
@@ -82,8 +74,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves the most recent transactions for a player, ordered by date descending.
-    /// Used for displaying Recent Activity list in the UI (50 for analytics).
+    /// Получение последних транзакций игрока.
     /// </summary>
     public async Task<List<Transaction>> GetRecentTransactionsAsync(int playerId, int count = 50)
     {
@@ -95,7 +86,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves all transactions for a player by their string ID.
+    /// Получение всех транзакций игрока по строковому ID.
     /// </summary>
     public async Task<List<Transaction>> GetTransactionsByPlayerIdAsync(string playerId, CancellationToken cancellationToken = default)
     {
@@ -110,7 +101,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves all savings goals for a player.
+    /// Получение всех целей сбережения игрока.
     /// </summary>
     public async Task<List<SavingsGoal>> GetSavingsGoalsByPlayerIdAsync(string playerId, CancellationToken cancellationToken = default)
     {
@@ -120,7 +111,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves all battles for a player.
+    /// Получение всех боев игрока.
     /// </summary>
     public async Task<List<Battle>> GetBattlesByPlayerIdAsync(string playerId, CancellationToken cancellationToken = default)
     {
@@ -131,7 +122,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Retrieves all expense categories for a player.
+    /// Получение всех категорий расходов игрока.
     /// </summary>
     public async Task<List<ExpenseCategory>> GetExpenseCategoriesByPlayerIdAsync(string playerId, CancellationToken cancellationToken = default)
     {
@@ -142,8 +133,23 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Adds a new player to the database.
-    /// Used during user registration.
+    /// Получение транзакции по ID.
+    /// </summary>
+    public async Task<Transaction?> GetTransactionByIdAsync(int transactionId)
+    {
+        return await _dbContext.Transactions.FindAsync(transactionId);
+    }
+
+    /// <summary>
+    /// Удаление транзакции.
+    /// </summary>
+    public void DeleteTransaction(Transaction transaction)
+    {
+        _dbContext.Transactions.Remove(transaction);
+    }
+
+    /// <summary>
+    /// Добавление нового игрока.
     /// </summary>
     public async Task AddPlayerAsync(Player player)
     {
@@ -151,7 +157,7 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Adds a new transaction to the database.
+    /// Добавление новой транзакции.
     /// </summary>
     public async Task AddTransactionAsync(Transaction transaction)
     {
@@ -163,11 +169,10 @@ public class GameRepository : IGameRepository
     }
 
     /// <summary>
-    /// Persists all changes made to the context to the database.
+    /// Сохранение изменений в базе данных.
     /// </summary>
     public async Task SaveChangesAsync()
     {
-        // Update the UpdatedAt timestamp for modified entities
         var entries = _dbContext.ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Modified)
             .ToList();
@@ -180,6 +185,62 @@ public class GameRepository : IGameRepository
             }
         }
 
+        await _dbContext.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Инициализация начальных данных для нового игрока.
+    /// </summary>
+    public async Task SeedPlayerDataAsync(int playerId)
+    {
+        var playerIdStr = playerId.ToString();
+
+        var hasGoal = await _dbContext.Set<SavingsGoal>()
+            .AnyAsync(g => g.PlayerId == playerIdStr);
+        if (hasGoal) return;
+
+        var goal = new SavingsGoal
+        {
+            GoalName = "PlayStation 5 Slim",
+            Description = "Победите босса консолей, чтобы получить награду!",
+            TargetAmount = 62000m,
+            CurrentAmount = 23250m,
+            ImageUrl = "ps5_slim_asset",
+            IsActive = true,
+            TotalHearts = 10,
+            DefeatedHearts = 3,
+            PlayerId = playerIdStr,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _dbContext.Set<SavingsGoal>().AddAsync(goal);
+
+        var now = DateTime.UtcNow;
+        var transactions = new[]
+        {
+            new Domain.Entities.Transaction
+            {
+                PlayerId = playerId, Title = "Заработная плата", Category = "Доход",
+                Amount = 180000m, Type = Domain.Enums.TransactionType.Saving,
+                Date = now.AddDays(-5), IconUrl = "salary_icon",
+                CreatedAt = now.AddDays(-5), UpdatedAt = now.AddDays(-5)
+            },
+            new Domain.Entities.Transaction
+            {
+                PlayerId = playerId, Title = "Яндекс Плюс", Category = "Подписки",
+                Amount = 400m, Type = Domain.Enums.TransactionType.Expense,
+                Date = now.AddDays(-2), IconUrl = "yandex_icon",
+                CreatedAt = now.AddDays(-2), UpdatedAt = now.AddDays(-2)
+            },
+            new Domain.Entities.Transaction
+            {
+                PlayerId = playerId, Title = "Spotify Premium", Category = "Подписки",
+                Amount = 700m, Type = Domain.Enums.TransactionType.Expense,
+                Date = now.AddDays(-1), IconUrl = "spotify_icon",
+                CreatedAt = now.AddDays(-1), UpdatedAt = now.AddDays(-1)
+            }
+        };
+        await _dbContext.Transactions.AddRangeAsync(transactions);
         await _dbContext.SaveChangesAsync();
     }
 }
