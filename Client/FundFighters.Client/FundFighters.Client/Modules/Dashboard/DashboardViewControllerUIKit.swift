@@ -71,6 +71,18 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         return l
     }()
 
+    private lazy var langButton: UIButton = {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = UserManager.shared.isRussian ? "RU" : "EN"
+        cfg.baseBackgroundColor = UIColor.systemGray6
+        cfg.baseForegroundColor = DS.textPrimary
+        cfg.cornerStyle = .capsule
+        let b = UIButton(configuration: cfg)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(toggleLang), for: .touchUpInside)
+        return b
+    }()
+
     private let notifButton: UIButton = {
         let b = UIButton(type: .custom)
         b.setImage(UIImage(named: "notf_inact"), for: .normal)
@@ -504,22 +516,6 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         guard scrollView === horizontalScrollView else { return }
         let page = Int(round(scrollView.contentOffset.x / scrollView.bounds.width))
-        currentPage = page
-        updateArrowStates()
-    }
-
-    private func updateArrowStates() {
-        leftArrowButton.alpha  = currentPage == 0 ? 0 : 1
-        rightArrowButton.alpha = currentPage == 2 ? 0 : 1
-        leftArrowButton.isUserInteractionEnabled  = currentPage != 0
-        rightArrowButton.isUserInteractionEnabled = currentPage != 2
-    }
-}
-on.isUserInteractionEnabled  = currentPage != 0
-        rightArrowButton.isUserInteractionEnabled = currentPage != 2
-    }
-}
-dth))
         currentPage = page
         updateArrowStates()
     }
