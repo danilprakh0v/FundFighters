@@ -14,8 +14,10 @@
 import UIKit
 
 struct TutorialStep {
-    let title: String
-    let description: String
+    let titleEn: String
+    let descEn: String
+    let titleRu: String
+    let descRu: String
     let iconName: String
 }
 
@@ -23,13 +25,30 @@ final class TutorialViewController: UIViewController {
     
     // --- Данные шагов обучения ---
     private var steps: [TutorialStep] = [
-        TutorialStep(title: "Добро пожаловать в FundFighters", description: "Первый финансовый трекер, где ваши сбережения сражаются за вас. Готовы к победе?", iconName: "star.fill"),
-        TutorialStep(title: "Победите свои расходы", description: "Каждый раз, когда вы откладываете деньги, вы наносите урон своему финансовому противнику. Одолейте зверя, достигнув цели!", iconName: "bolt.heart.fill"),
-        TutorialStep(title: "Удобный учет", description: "Используйте кнопку 'плюс' или первую вкладку, чтобы записывать свои доходы и расходы в реальном времени.", iconName: "plus.circle.fill"),
-        TutorialStep(title: "Следите за прогрессом", description: "Контролируйте свой баланс и ежемесячный прогресс. Держите сердца полными, а HP врага — на нуле!", iconName: "chart.bar.fill")
+        TutorialStep(titleEn: "Welcome to FundFighters",
+                     descEn: "The first financial tracker where your savings fight for you. Ready to win?",
+                     titleRu: "Добро пожаловать в FundFighters",
+                     descRu: "Первый финансовый трекер, где ваши сбережения сражаются за вас. Готовы к победе?",
+                     iconName: "star.fill"),
+        TutorialStep(titleEn: "Defeat your expenses",
+                     descEn: "Every time you save money, you deal damage to your financial opponent. Defeat the beast by reaching your goal!",
+                     titleRu: "Победите свои расходы",
+                     descRu: "Каждый раз, когда вы откладываете деньги, вы наносите урон своему финансовому противнику. Одолейте зверя, достигнув цели!",
+                     iconName: "bolt.heart.fill"),
+        TutorialStep(titleEn: "Easy tracking",
+                     descEn: "Use the 'plus' button or the first tab to record your income and expenses in real time.",
+                     titleRu: "Удобный учет",
+                     descRu: "Используйте кнопку 'плюс' или первую вкладку, чтобы записывать свои доходы и расходы в реальном времени.",
+                     iconName: "plus.circle.fill"),
+        TutorialStep(titleEn: "Track progress",
+                     descEn: "Monitor your balance and monthly progress. Keep your hearts full and enemy HP at zero!",
+                     titleRu: "Следите за прогрессом",
+                     descRu: "Контролируйте свой баланс и ежемесячный прогресс. Держите сердца полными, а HP врага — на нуле!",
+                     iconName: "chart.bar.fill")
     ]
     
     private var currentStepIndex = 0
+    private var isRussian = false
     
     // MARK: - UI Компоненты
     
@@ -45,6 +64,18 @@ final class TutorialViewController: UIViewController {
         v.layer.shadowOffset = CGSize(width: 0, height: 10)
         v.layer.shadowRadius = 20
         return v
+    }()
+    
+    private lazy var langButton: UIButton = {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = "EN"
+        cfg.baseBackgroundColor = UIColor.systemGray6
+        cfg.baseForegroundColor = DS.textPrimary
+        cfg.cornerStyle = .capsule
+        let b = UIButton(configuration: cfg)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(toggleLang), for: .touchUpInside)
+        return b
     }()
     
     private let iconImageView: UIImageView = {
@@ -77,7 +108,7 @@ final class TutorialViewController: UIViewController {
     
     private lazy var nextButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setTitle("Далее", for: .normal)
+        b.setTitle("Next", for: .normal)
         b.titleLabel?.font = DS.golosBold(18)
         b.backgroundColor = DS.accent
         b.setTitleColor(.white, for: .normal)
@@ -106,13 +137,18 @@ final class TutorialViewController: UIViewController {
     // --- Настройка верстки ---
     private func setupLayout() {
         view.addSubview(containerView)
-        [iconImageView, titleLabel, descriptionLabel, pageControl, nextButton].forEach { containerView.addSubview($0) }
+        [langButton, iconImageView, titleLabel, descriptionLabel, pageControl, nextButton].forEach { containerView.addSubview($0) }
         
         NSLayoutConstraint.activate([
             containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             containerView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -50),
             containerView.bottomAnchor.constraint(equalTo: nextButton.bottomAnchor, constant: 40),
+            
+            langButton.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            langButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            langButton.heightAnchor.constraint(equalToConstant: 32),
+            langButton.widthAnchor.constraint(equalToConstant: 54),
             
             iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 40),
             iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
@@ -138,6 +174,14 @@ final class TutorialViewController: UIViewController {
     }
     
     // --- Обработка нажатий ---
+    @objc private func toggleLang() {
+        isRussian.toggle()
+        UIView.transition(with: langButton, duration: 0.2, options: .transitionCrossDissolve, animations: {
+            self.langButton.configuration?.title = self.isRussian ? "RU" : "EN"
+        })
+        updateStep(animated: true)
+    }
+
     @objc private func nextTapped() {
         if currentStepIndex < steps.count - 1 {
             currentStepIndex += 1
@@ -154,10 +198,13 @@ final class TutorialViewController: UIViewController {
         
         let block = {
             self.iconImageView.image = UIImage(systemName: step.iconName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 40))
-            self.titleLabel.text = step.title
-            self.descriptionLabel.text = step.description
+            self.titleLabel.text = self.isRussian ? step.titleRu : step.titleEn
+            self.descriptionLabel.text = self.isRussian ? step.descRu : step.descEn
             self.pageControl.currentPage = self.currentStepIndex
-            self.nextButton.setTitle(isLast ? "Начать битву!" : "Далее", for: .normal)
+            
+            let btnTextEn = isLast ? "Start Battle!" : "Next"
+            let btnTextRu = isLast ? "Начать битву!" : "Далее"
+            self.nextButton.setTitle(self.isRussian ? btnTextRu : btnTextEn, for: .normal)
         }
         
         if animated {

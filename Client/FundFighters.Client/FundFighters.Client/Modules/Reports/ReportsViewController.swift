@@ -120,7 +120,7 @@ final class ReportsViewController: UIViewController {
 
     private let yearButton: UIButton = {
         var cfg = UIButton.Configuration.plain()
-        cfg.title = "Год"
+        cfg.title = "Year"
         cfg.image = UIImage(systemName: "chevron.up.chevron.down",
                             withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold))
         cfg.imagePlacement = .trailing

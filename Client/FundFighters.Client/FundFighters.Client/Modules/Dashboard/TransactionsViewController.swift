@@ -24,7 +24,7 @@ final class TransactionsViewController: UIViewController {
     private let dateFormatter: DateFormatter = {
         let df = DateFormatter()
         df.dateFormat = "MMMM d"
-        df.locale = Locale(identifier: "ru_RU")
+        df.locale = Locale(identifier: "en_US")
         return df
     }()
 
@@ -322,9 +322,9 @@ final class TransactionsViewController: UIViewController {
     private func updateDateUI() {
         let cal = Calendar.current
         if cal.isDateInToday(currentDate) {
-            todayLabel.text = "Сегодня"
+            todayLabel.text = "Today"
         } else if cal.isDateInYesterday(currentDate) {
-            todayLabel.text = "Вчера"
+            todayLabel.text = "Yesterday"
         } else {
             todayLabel.text = dateFormatter.string(from: currentDate)
         }

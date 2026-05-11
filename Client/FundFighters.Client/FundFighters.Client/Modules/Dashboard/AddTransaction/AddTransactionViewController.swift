@@ -18,7 +18,7 @@ final class AddTransactionViewController: UIViewController {
     // MARK: - Свойства (Properties)
 
     var onTransactionAdded: (() -> Void)?
-    private var selectedCategory: String = "Другое"
+    private var selectedCategory: String = "Other"
     private var isExpense: Bool = true
 
     // MARK: - UI Элементы: Фон и Контейнер
@@ -48,7 +48,7 @@ final class AddTransactionViewController: UIViewController {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "Новая транзакция"
+        l.text = "New transaction"
         l.font = DS.golosBold(26)
         l.textColor = DS.textPrimary
         l.textAlignment = .center
@@ -103,14 +103,14 @@ final class AddTransactionViewController: UIViewController {
     // MARK: - UI Элементы: Переключатель типа
 
     private lazy var expenseBtn: LiquidGlassActionButton = {
-        let b = LiquidGlassActionButton(title: "Расход", color: DT.expenseRed)
+        let b = LiquidGlassActionButton(title: "Expense", color: DT.expenseRed)
         b.tag = 0
         b.addTarget(self, action: #selector(typeTapped(_:)), for: .touchUpInside)
         return b
     }()
 
     private lazy var incomeBtn: LiquidGlassActionButton = {
-        let b = LiquidGlassActionButton(title: "Доход", color: DT.accentGreen)
+        let b = LiquidGlassActionButton(title: "Income", color: DT.accentGreen)
         b.tag = 1
         b.addTarget(self, action: #selector(typeTapped(_:)), for: .touchUpInside)
         return b
@@ -129,14 +129,14 @@ final class AddTransactionViewController: UIViewController {
 
     private let descriptionField: UITextField = {
         AddTransactionViewController.styledField(
-            placeholder: "Описание (напр. Spotify)",
+            placeholder: "Description (e.g. Spotify)",
             iconName: "text.alignleft"
         )
     }()
 
     private lazy var categoryButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.title = "Категория: Другое"
+        config.title = "Category: Other"
         config.baseForegroundColor = DS.textPrimary
         config.image = UIImage(systemName: "bag.fill")
         config.imagePadding = 12
@@ -151,15 +151,15 @@ final class AddTransactionViewController: UIViewController {
         b.translatesAutoresizingMaskIntoConstraints = false
 
         let categories: [(String, String)] = [
-            ("Подписки",     "play.circle.fill"),
-            ("Еда",          "cart.fill"),
-            ("Аренда",       "house.fill"),
-            ("Доход",        "briefcase.fill"),
-            ("Развлечения",  "tv.fill"),
-            ("Техника",      "laptopcomputer"),
-            ("Транспорт",    "car.fill"),
-            ("Здоровье",     "heart.fill"),
-            ("Другое",       "bag.fill")
+            ("Subscriptions", "play.circle.fill"),
+            ("Food",          "cart.fill"),
+            ("Rent",          "house.fill"),
+            ("Income",        "briefcase.fill"),
+            ("Entertainment", "tv.fill"),
+            ("Tech",          "laptopcomputer"),
+            ("Transport",     "car.fill"),
+            ("Health",        "heart.fill"),
+            ("Other",         "bag.fill")
         ]
         let actions = categories.map { cat in
             UIAction(title: cat.0,
@@ -167,19 +167,19 @@ final class AddTransactionViewController: UIViewController {
                 guard let self else { return }
                 self.selectedCategory = cat.0
                 var cfg = self.categoryButton.configuration
-                cfg?.title = "Категория: \(cat.0)"
+                cfg?.title = "Category: \(cat.0)"
                 cfg?.image = UIImage(systemName: cat.1)
                 self.categoryButton.configuration = cfg
             }
         }
-        b.menu = UIMenu(title: "Выберите категорию", children: actions)
+        b.menu = UIMenu(title: "Select category", children: actions)
         return b
     }()
 
     // MARK: - UI Элементы: Кнопка сохранения
 
     private lazy var saveButton: LiquidGlassActionButton = {
-        let b = LiquidGlassActionButton(title: "Добавить транзакцию",
+        let b = LiquidGlassActionButton(title: "Add transaction",
                                         color: DT.deepContrastGreen)
         b.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         return b
@@ -376,7 +376,7 @@ final class AddTransactionViewController: UIViewController {
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                     self.shake(self.saveButton)
                     let alert = UIAlertController(
-                        title:   "Ошибка",
+                        title:   "Error",
                         message: error.localizedDescription,
                         preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "OK", style: .default))

@@ -381,12 +381,12 @@ final class BattleViewController: UIViewController {
 
             // Спрайты
             playerImageView.leadingAnchor.constraint(equalTo: battleContainer.leadingAnchor, constant: 30),
-            playerImageView.bottomAnchor.constraint(equalTo: battleContainer.bottomAnchor, constant: -35),
+            playerImageView.bottomAnchor.constraint(equalTo: battleContainer.bottomAnchor, constant: -70),
             playerImageView.widthAnchor.constraint(equalToConstant: 120),
             playerImageView.heightAnchor.constraint(equalToConstant: 150),
 
             enemyImageView.trailingAnchor.constraint(equalTo: battleContainer.trailingAnchor, constant: -30),
-            enemyImageView.bottomAnchor.constraint(equalTo: battleContainer.bottomAnchor, constant: -35),
+            enemyImageView.bottomAnchor.constraint(equalTo: battleContainer.bottomAnchor, constant: -70),
             enemyImageView.widthAnchor.constraint(equalToConstant: 120),
             enemyImageView.heightAnchor.constraint(equalToConstant: 150),
 
@@ -454,8 +454,8 @@ final class BattleViewController: UIViewController {
 
     @objc private func saveMoneyTapped() {
         animateButtonRelease(saveMoneyButton)
-        showAmountMenu(title: "Накопить ⚔️",
-                       subtitle: "Сколько вы отложили?",
+        showAmountMenu(title: "Save Money ⚔️",
+                       subtitle: "How much did you save?",
                        presets: [500, 1000, 2500, 5000]) { [weak self] amount in
             guard let self = self else { return }
             self.currentAmount = min(self.targetAmount, self.currentAmount + amount)
@@ -618,5 +618,8 @@ final class BattleViewController: UIViewController {
         UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
             self.slashEffectView.alpha = 0
         }
+    }
+}
+       }
     }
 }

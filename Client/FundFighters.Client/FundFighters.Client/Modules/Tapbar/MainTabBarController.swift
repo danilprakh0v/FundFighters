@@ -117,7 +117,7 @@ final class ProfilePlaceholderViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         let label = UILabel()
-        label.text = "Профиль\nСкоро в приложении"
+        label.text = "Profile\nComing soon"
         label.font = DS.golosBold(22)
         label.textAlignment = .center
         label.numberOfLines = 2

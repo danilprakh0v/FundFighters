@@ -322,9 +322,9 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     }
 
     @objc private func handleLogout() {
-        let alert = UIAlertController(title: "Выход", message: "Вы уверены, что хотите выйти?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Выйти", style: .destructive, handler: { _ in
+        let alert = UIAlertController(title: "Log out", message: "Are you sure you want to log out?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Log out", style: .destructive, handler: { _ in
             UserManager.shared.logout()
             guard let window = self.view.window else { return }
             UIView.transition(with: window, duration: 0.5, options: .transitionFlipFromRight, animations: {
@@ -494,4 +494,9 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         leftArrowButton.isUserInteractionEnabled  = currentPage != 0
         rightArrowButton.isUserInteractionEnabled = currentPage != 2
     }
+}
+currentPage != 2
+    }
+}
+ }
 }

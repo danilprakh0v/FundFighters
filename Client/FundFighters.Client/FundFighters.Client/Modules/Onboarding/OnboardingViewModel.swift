@@ -69,27 +69,27 @@ struct OnboardingStep {
 // Константные данные для шагов обучения
 let onboardingSteps = [
     OnboardingStep(
-        title: "Добро пожаловать в FundFighters",
-        description: "Геймифицируйте свои сбережения в эпических финансовых битвах!",
+        title: "Welcome to FundFighters",
+        description: "Gamify your savings in epic financial battles!",
         imageName: "star.fill",
-        actionButtonText: "Далее"
+        actionButtonText: "Next"
     ),
     OnboardingStep(
-        title: "Ставьте цели",
-        description: "Создавайте финансовые цели и превращайте их во врагов для победы!",
+        title: "Set Goals",
+        description: "Create financial goals and turn them into enemies to defeat!",
         imageName: "target",
-        actionButtonText: "Далее"
+        actionButtonText: "Next"
     ),
     OnboardingStep(
-        title: "Следите за прогрессом",
-        description: "Наблюдайте, как растет ваш баланс, пока вы побеждаете финансовых врагов.",
+        title: "Track Progress",
+        description: "Watch your balance grow as you defeat financial enemies.",
         imageName: "chart.bar.fill",
-        actionButtonText: "Далее"
+        actionButtonText: "Next"
     ),
     OnboardingStep(
-        title: "Готовы к битве?",
-        description: "Все настроено! Начните свое финансовое путешествие прямо сейчас.",
+        title: "Ready for Battle?",
+        description: "Everything is set! Start your financial journey right now.",
         imageName: "bolt.fill",
-        actionButtonText: "Погнали!"
+        actionButtonText: "Let's Go!"
     )
 ]
