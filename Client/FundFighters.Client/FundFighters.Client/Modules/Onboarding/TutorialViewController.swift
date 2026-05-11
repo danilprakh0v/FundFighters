@@ -66,7 +66,7 @@ final class TutorialViewController: UIViewController {
         return v
     }()
     
-    private lazy var langButton: UIButton = {
+    public lazy var langButton: UIButton = {
         var cfg = UIButton.Configuration.filled()
         cfg.title = "EN"
         cfg.baseBackgroundColor = UIColor.systemGray6

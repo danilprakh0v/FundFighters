@@ -223,7 +223,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         welcomeStack.spacing = 2
         welcomeStack.translatesAutoresizingMaskIntoConstraints = false
 
-        let headerStack = UIStackView(arrangedSubviews: [avatarImageView, welcomeStack, UIView(), notifButton, logoutButton])
+        let headerStack = UIStackView(arrangedSubviews: [avatarImageView, welcomeStack, UIView(), langButton, notifButton, logoutButton])
         headerStack.axis = .horizontal
         headerStack.alignment = .center
         headerStack.spacing = 12
@@ -515,5 +515,19 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         rightArrowButton.isUserInteractionEnabled = currentPage != 2
     }
 }
- }
+on.isUserInteractionEnabled  = currentPage != 0
+        rightArrowButton.isUserInteractionEnabled = currentPage != 2
+    }
+}
+dth))
+        currentPage = page
+        updateArrowStates()
+    }
+
+    private func updateArrowStates() {
+        leftArrowButton.alpha  = currentPage == 0 ? 0 : 1
+        rightArrowButton.alpha = currentPage == 2 ? 0 : 1
+        leftArrowButton.isUserInteractionEnabled  = currentPage != 0
+        rightArrowButton.isUserInteractionEnabled = currentPage != 2
+    }
 }
