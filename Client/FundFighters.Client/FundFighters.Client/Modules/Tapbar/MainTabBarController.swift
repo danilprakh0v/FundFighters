@@ -113,11 +113,11 @@ final class AnalyticsPlaceholderViewController: UIViewController {
 }
 
 final class ProfilePlaceholderViewController: UIViewController {
+    private let label = UILabel()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        let label = UILabel()
-        label.text = "Profile\nComing soon"
         label.font = DS.golosBold(22)
         label.textAlignment = .center
         label.numberOfLines = 2
@@ -128,6 +128,18 @@ final class ProfilePlaceholderViewController: UIViewController {
             label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+    }
+    
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        label.text = isRu ? "Профиль\nСкоро в приложении" : "Profile\nComing soon"
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 

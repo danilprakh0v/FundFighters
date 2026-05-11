@@ -493,11 +493,12 @@ final class BattleViewController: UIViewController {
             })
         }
 
-        alert.addAction(UIAlertAction(title: "Своя сумма…", style: .default) { [weak self] _ in
+        let isRu = UserManager.shared.isRussian
+        alert.addAction(UIAlertAction(title: isRu ? "Своя сумма…" : "Custom amount…", style: .default) { [weak self] _ in
             self?.showCustomAmountInput(completion: completion)
         })
 
-        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
 
         // Цветовой акцент для кнопок
         alert.view.tintColor = UIColor(red: 37/255, green: 163/255, blue: 115/255, alpha: 1)
@@ -607,6 +608,26 @@ final class BattleViewController: UIViewController {
                 } completion: { _ in
                     self.refreshCard(animated: true)
                     self.isAnimating = false
+                }
+            }
+        }
+    }
+
+    // Белая вспышка
+    private func flashSlash() {
+        slashEffectView.alpha = 0.6
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
+            self.slashEffectView.alpha = 0
+        }
+    }
+}
+ 0
+        }
+    }
+}
+       }
+    }
+}
                 }
             }
         }
