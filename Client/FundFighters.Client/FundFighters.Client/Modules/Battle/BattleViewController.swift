@@ -620,6 +620,3 @@ final class BattleViewController: UIViewController {
         }
     }
 }
-       }
-    }
-}

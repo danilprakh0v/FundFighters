@@ -27,6 +27,15 @@ final class UserManager {
     
     var session = UserSession()
     
+    // Флаг языка
+    var isRussian: Bool {
+        get { UserDefaults.standard.bool(forKey: "isRussian") }
+        set { 
+            UserDefaults.standard.set(newValue, forKey: "isRussian")
+            NotificationCenter.default.post(name: NSNotification.Name("LanguageChanged"), object: nil)
+        }
+    }
+    
     // Флаг для отображения туториала
     var hasSeenTutorial: Bool {
         get { UserDefaults.standard.bool(forKey: "hasSeenTutorial") }

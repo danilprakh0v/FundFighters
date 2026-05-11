@@ -182,6 +182,22 @@ final class TransactionsViewController: UIViewController {
         setupTableView()
         updateDateUI()
         loadData()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+    }
+    
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        titleLabel.text = isRu ? "Транзакции" : "Transactions"
+        emptyLabel.text = isRu ? "Нет транзакций за этот день" : "No transactions for this day"
+        addBtn.setTitle(isRu ? "Добавить транзакцию" : "Add transaction", for: .normal)
+        dateFormatter.locale = Locale(identifier: isRu ? "ru_RU" : "en_US")
+        updateDateUI()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {

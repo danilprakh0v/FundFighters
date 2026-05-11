@@ -94,7 +94,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
     private let goalsTitleLabel: UILabel = {
         let l = UILabel()
-        l.text = "Цели / Враги"
+        l.text = "Goals / Enemies"
         l.font = DS.golosBold(20)
         l.textColor = DS.textPrimary
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -168,10 +168,30 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         setupActions()
         bindViewModel()
         
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+        
         // Отображение начальных данных во время загрузки
         updateUI()
         
         viewModel.loadDashboard()
+    }
+    
+    @objc private func toggleLang() {
+        UserManager.shared.isRussian.toggle()
+    }
+
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        langButton.configuration?.title = isRu ? "RU" : "EN"
+        welcomeLabel.text = isRu ? "С возвращением!" : "Welcome back!"
+        goalsTitleLabel.text = isRu ? "Цели / Враги" : "Goals / Enemies"
+        savingsGoalName = isRu ? "Нет активной цели" : "No active goal"
+        refreshSavingsCard()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -493,9 +513,6 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         rightArrowButton.alpha = currentPage == 2 ? 0 : 1
         leftArrowButton.isUserInteractionEnabled  = currentPage != 0
         rightArrowButton.isUserInteractionEnabled = currentPage != 2
-    }
-}
-currentPage != 2
     }
 }
  }

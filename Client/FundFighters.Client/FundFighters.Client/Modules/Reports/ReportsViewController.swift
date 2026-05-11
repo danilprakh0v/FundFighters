@@ -91,7 +91,7 @@ final class ReportsViewController: UIViewController {
 
     private let periodLabel: UILabel = {
         let l = UILabel()
-        l.text          = "Ноябрь"
+        l.text          = "November"
         l.font          = .systemFont(ofSize: 15, weight: .semibold)
         l.textColor     = .label
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -146,6 +146,23 @@ final class ReportsViewController: UIViewController {
         view.backgroundColor = ReportsDT.background
         setupLayout()
         loadData()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+    }
+    
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        sectionTitleLabel.text = isRu ? "Тип расходов" : "Expense type"
+        periodLabel.text = isRu ? "Ноябрь" : "November"
+        
+        var cfg = yearButton.configuration
+        cfg?.title = isRu ? "Год" : "Year"
+        yearButton.configuration = cfg
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Верстка
