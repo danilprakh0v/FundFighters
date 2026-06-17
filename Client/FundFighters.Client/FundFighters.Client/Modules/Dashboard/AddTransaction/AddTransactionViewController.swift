@@ -18,6 +18,7 @@ final class AddTransactionViewController: UIViewController {
     // MARK: - Свойства (Properties)
 
     var onTransactionAdded: (() -> Void)?
+    var selectedDate: Date = Date()
     private var selectedCategory: String = "Other"
     private var isExpense: Bool = true
 
@@ -150,31 +151,56 @@ final class AddTransactionViewController: UIViewController {
         b.showsMenuAsPrimaryAction = true
         b.translatesAutoresizingMaskIntoConstraints = false
 
-        let categories: [(String, String)] = [
-            ("Subscriptions", "play.circle.fill"),
-            ("Food",          "cart.fill"),
-            ("Rent",          "house.fill"),
-            ("Income",        "briefcase.fill"),
-            ("Entertainment", "tv.fill"),
-            ("Tech",          "laptopcomputer"),
-            ("Transport",     "car.fill"),
-            ("Health",        "heart.fill"),
-            ("Other",         "bag.fill")
-        ]
-        let actions = categories.map { cat in
-            UIAction(title: cat.0,
-                     image: UIImage(systemName: cat.1)) { [weak self] _ in
-                guard let self else { return }
-                self.selectedCategory = cat.0
-                var cfg = self.categoryButton.configuration
-                cfg?.title = "Category: \(cat.0)"
-                cfg?.image = UIImage(systemName: cat.1)
-                self.categoryButton.configuration = cfg
-            }
-        }
-        b.menu = UIMenu(title: "Select category", children: actions)
+        updateCategoryMenu(for: b)
         return b
     }()
+
+    private lazy var dateButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.baseForegroundColor = DS.textPrimary
+        config.image = UIImage(systemName: "calendar")
+        config.imagePadding = 12
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+
+        let b = UIButton(configuration: config)
+        b.backgroundColor = UIColor.systemGray6
+        b.layer.cornerRadius = 14
+        b.layer.cornerCurve = .continuous
+        b.contentHorizontalAlignment = .leading
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(showDatePicker), for: .touchUpInside)
+        return b
+    }()
+
+    private func updateCategoryMenu(for button: UIButton) {
+        let isRu = UserManager.shared.isRussian
+        let categories: [(String, String, String)] = [
+            ("Subscriptions", "Подписки", "play.circle.fill"),
+            ("Food", "Еда", "cart.fill"),
+            ("Rent", "Аренда", "house.fill"),
+            ("Income", "Доход", "briefcase.fill"),
+            ("Entertainment", "Развлечения", "tv.fill"),
+            ("Tech", "Техника", "laptopcomputer"),
+            ("Transport", "Транспорт", "car.fill"),
+            ("Health", "Здоровье", "heart.fill"),
+            ("Other", "Другое", "bag.fill")
+        ]
+
+        let actions = categories.map { cat in
+            let title = isRu ? cat.1 : cat.0
+            return UIAction(title: title,
+                            image: UIImage(systemName: cat.2)) { [weak self] _ in
+                guard let self else { return }
+                self.selectedCategory = cat.0 // Всегда отправляем английский ключ на бек
+                var cfg = button.configuration
+                let catPrefix = isRu ? "Категория:" : "Category:"
+                cfg?.title = "\(catPrefix) \(title)"
+                cfg?.image = UIImage(systemName: cat.2)
+                button.configuration = cfg
+            }
+        }
+        button.menu = UIMenu(title: isRu ? "Выберите категорию" : "Select category", children: actions)
+    }
 
     // MARK: - UI Элементы: Кнопка сохранения
 
@@ -200,6 +226,43 @@ final class AddTransactionViewController: UIViewController {
 
         let backdropTap = UITapGestureRecognizer(target: self, action: #selector(backdropTapped))
         backdropView.addGestureRecognizer(backdropTap)
+
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        titleLabel.text = isRu ? "Новая транзакция" : "New transaction"
+        expenseBtn.setTitle(isRu ? "Расход" : "Expense", for: .normal)
+        incomeBtn.setTitle(isRu ? "Доход" : "Income", for: .normal)
+        descriptionField.placeholder = isRu ? "Описание (например, Spotify)" : "Description (e.g. Spotify)"
+        saveButton.setTitle(isRu ? "Добавить транзакцию" : "Add transaction", for: .normal)
+
+        updateCategoryMenu(for: categoryButton)
+        updateDateButton()
+        // Обновляем текст кнопки с текущей выбранной категорией
+        let currentCatNameRu: String
+        switch selectedCategory {
+            case "Subscriptions": currentCatNameRu = "Подписки"
+            case "Food": currentCatNameRu = "Еда"
+            case "Rent": currentCatNameRu = "Аренда"
+            case "Income": currentCatNameRu = "Доход"
+            case "Entertainment": currentCatNameRu = "Развлечения"
+            case "Tech": currentCatNameRu = "Техника"
+            case "Transport": currentCatNameRu = "Транспорт"
+            case "Health": currentCatNameRu = "Здоровье"
+            default: currentCatNameRu = "Другое"
+        }
+        var cfg = categoryButton.configuration
+        let catPrefix = isRu ? "Категория:" : "Category:"
+        let title = isRu ? currentCatNameRu : selectedCategory
+        cfg?.title = "\(catPrefix) \(title)"
+        categoryButton.configuration = cfg
     }
 
     // MARK: - Настройка верстки (Layout)
@@ -220,6 +283,7 @@ final class AddTransactionViewController: UIViewController {
          typeStack,
          descriptionField,
          categoryButton,
+         dateButton,
          saveButton].forEach { containerView.addSubview($0) }
 
         NSLayoutConstraint.activate([
@@ -272,8 +336,13 @@ final class AddTransactionViewController: UIViewController {
             categoryButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
             categoryButton.heightAnchor.constraint(equalToConstant: 54),
 
+            dateButton.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 10),
+            dateButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
+            dateButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
+            dateButton.heightAnchor.constraint(equalToConstant: 54),
+
             // Кнопка сохранения
-            saveButton.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 24),
+            saveButton.topAnchor.constraint(equalTo: dateButton.bottomAnchor, constant: 18),
             saveButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 24),
             saveButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -24),
             saveButton.heightAnchor.constraint(equalToConstant: 56),
@@ -350,11 +419,16 @@ final class AddTransactionViewController: UIViewController {
         }
 
         // Подготовка и отправка запроса к API
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let dateStr = dateFormatter.string(from: selectedDate)
+
         let request = ProcessTransactionRequest(
             amount:   Decimal(amount),
             type:     isExpense ? 0 : 1,
             title:    titleText,
-            category: selectedCategory
+            category: selectedCategory,
+            date:     dateStr
         )
 
         saveButton.isEnabled = false
@@ -390,6 +464,42 @@ final class AddTransactionViewController: UIViewController {
 
     @objc private func closeTapped()   { dismiss(animated: true) }
     @objc private func backdropTapped() { view.endEditing(true) }
+
+    @objc private func showDatePicker() {
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(title: isRu ? "Дата транзакции" : "Transaction date", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .actionSheet)
+        let picker = UIDatePicker()
+        picker.datePickerMode = .dateAndTime
+        picker.preferredDatePickerStyle = .wheels
+        picker.date = selectedDate
+        picker.maximumDate = Date()
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        alert.view.addSubview(picker)
+
+        NSLayoutConstraint.activate([
+            picker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50),
+            picker.leadingAnchor.constraint(equalTo: alert.view.leadingAnchor),
+            picker.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor)
+        ])
+
+        alert.addAction(UIAlertAction(title: isRu ? "Применить" : "Apply", style: .default) { [weak self] _ in
+            self?.selectedDate = picker.date
+            self?.updateDateButton()
+        })
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    private func updateDateButton() {
+        let isRu = UserManager.shared.isRussian
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: isRu ? "ru_RU" : "en_US")
+        formatter.dateFormat = isRu ? "d MMM, HH:mm" : "MMM d, HH:mm"
+        var cfg = dateButton.configuration
+        cfg?.title = "\(isRu ? "Дата:" : "Date:") \(formatter.string(from: selectedDate))"
+        cfg?.image = UIImage(systemName: "calendar")
+        dateButton.configuration = cfg
+    }
 
     // MARK: - Вспомогательные методы (Helpers)
 

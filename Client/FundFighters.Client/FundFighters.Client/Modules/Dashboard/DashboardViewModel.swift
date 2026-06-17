@@ -47,38 +47,9 @@ final class DashboardViewModel: ObservableObject {
                     self?.dashboard = dashboard
                     self?.onDataLoaded?()
                     
-                case .failure:
-                    // Резервные данные для демонстрации при отсутствии подключения к серверу
-                    self?.dashboard = DashboardResponse(
-                        userInfo: UserInfoResponse(username: "danilis bobi", email: "daniils.95@yandex.ru"),
-                        balanceInfo: BalanceInfoResponse(
-                            totalBalance: 145000.99,
-                            monthlyIncome: 100000,
-                            incomeChangePercent: 27,
-                            monthlyExpense: 45000,
-                            expenseChangePercent: 12
-                        ),
-                        activeGoal: SavingsGoalResponse(
-                            id: "1",
-                            goalName: "Playstation 5 Slim",
-                            description: "Победите врага, чтобы получить консоль!",
-                            targetAmount: 62000,
-                            currentAmount: 23250,
-                            imageUrl: "ps5_monster",
-                            progressPercentage: 37.5,
-                            remainingAmount: 38750,
-                            totalHearts: 8,
-                            defeatedHearts: 3
-                        ),
-                        recentTransactions: [
-                            TransactionResponse(id: "1", amount: 400, type: "Expense", category: "Подписка", description: "Яндекс Плюс", iconUrl: "yandex_icon", createdAt: Date()),
-                            TransactionResponse(id: "2", amount: 700, type: "Expense", category: "Подписка", description: "Spotify Premium", iconUrl: "spotify_icon", createdAt: Date().addingTimeInterval(-3600 * 5)),
-                            TransactionResponse(id: "3", amount: 300, type: "Income", category: "Перевод", description: "Зарплата UI/UX дизайнера", iconUrl: "salary_icon", createdAt: Date().addingTimeInterval(-3600 * 10))
-                        ],
-                        recentBattles: [],
-                        expenseCategories: []
-                    )
-                    self?.onDataLoaded?()
+                case .failure(let error):
+                    self?.setError(error.localizedDescription)
+                    self?.onError?(error.localizedDescription)
                 }
             }
         }

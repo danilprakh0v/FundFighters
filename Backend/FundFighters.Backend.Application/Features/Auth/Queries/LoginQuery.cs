@@ -82,4 +82,14 @@ public class LoginResponse
     /// Player's username (set if login succeeded).
     /// </summary>
     public string? Username { get; set; }
+
+    /// <summary>
+    /// Email игрока.
+    /// </summary>
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Текущее состояние двухфакторной аутентификации.
+    /// </summary>
+    public bool IsTwoFactorEnabled { get; set; }
 }

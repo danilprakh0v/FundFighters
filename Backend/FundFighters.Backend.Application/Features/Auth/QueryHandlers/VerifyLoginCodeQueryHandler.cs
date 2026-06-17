@@ -94,7 +94,9 @@ public class VerifyLoginCodeQueryHandler : IRequestHandler<VerifyLoginCodeQuery,
                 Message = "Login successful!",
                 Token = token,
                 PlayerId = player.Id,
-                Username = player.Username
+                Username = player.Username,
+                Email = player.Email,
+                IsTwoFactorEnabled = player.IsTwoFactorEnabled
             };
         }
         catch (Exception ex)

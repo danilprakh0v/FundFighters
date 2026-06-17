@@ -57,4 +57,10 @@ public class ProcessTransactionRequest
     /// Category of the transaction for grouping (e.g., "Subscriptions", "Income", "Food").
     /// </summary>
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Опциональная дата транзакции. Если не указана, используется текущее время.
+    /// Optional transaction date. If not provided, current time is used.
+    /// </summary>
+    public DateTime? Date { get; set; }
 }

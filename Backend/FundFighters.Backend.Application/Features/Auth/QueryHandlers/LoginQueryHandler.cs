@@ -121,7 +121,9 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
                     Message = "Two-factor authentication code sent to your email.",
                     RequiresTwoFactor = true,
                     PlayerId = player.Id,
-                    Username = player.Username
+                    Username = player.Username,
+                    Email = player.Email,
+                    IsTwoFactorEnabled = player.IsTwoFactorEnabled
                 };
             }
 
@@ -136,7 +138,9 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, LoginResponse>
                 Message = "Login successful!",
                 Token = token,
                 PlayerId = player.Id,
-                Username = player.Username
+                Username = player.Username,
+                Email = player.Email,
+                IsTwoFactorEnabled = player.IsTwoFactorEnabled
             };
         }
         catch (Exception ex)

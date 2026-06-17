@@ -50,7 +50,9 @@ final class BalanceCardView: UIView {
         let button = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
         button.setImage(UIImage(systemName: "eye.slash.fill", withConfiguration: config), for: .normal)
-        button.tintColor = .white
+        button.tintColor = UIColor.white.withAlphaComponent(0.92)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.14)
+        button.layer.cornerCurve = .continuous
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -204,10 +206,16 @@ final class BalanceCardView: UIView {
         setupView()
         setupConstraints()
         setupActions()
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override var intrinsicContentSize: CGSize {
@@ -277,10 +285,10 @@ final class BalanceCardView: UIView {
             balanceAmountLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             
             // FIX 1: явный размер кнопки — иконка больше не схлопывается в 0
-            eyeButton.widthAnchor.constraint(equalToConstant: 24),
-            eyeButton.heightAnchor.constraint(equalToConstant: 24),
+            eyeButton.widthAnchor.constraint(equalToConstant: 30),
+            eyeButton.heightAnchor.constraint(equalToConstant: 30),
             eyeButton.centerYAnchor.constraint(equalTo: balanceAmountLabel.centerYAnchor),
-            eyeButton.leadingAnchor.constraint(equalTo: balanceAmountLabel.trailingAnchor, constant: 12),
+            eyeButton.leadingAnchor.constraint(equalTo: balanceAmountLabel.trailingAnchor, constant: 10),
             
             // Income Section (Строго 1 пиксель от низа баланса)
             incomeTitleLabel.topAnchor.constraint(equalTo: balanceAmountLabel.bottomAnchor, constant: 1),
@@ -329,6 +337,20 @@ final class BalanceCardView: UIView {
     
     private func setupActions() {
         eyeButton.addTarget(self, action: #selector(eyeButtonTapped), for: .touchUpInside)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        eyeButton.layer.cornerRadius = eyeButton.bounds.height / 2
+    }
+
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        totalBalanceLabel.text = isRu ? "Общий баланс" : "Total Balance"
+        incomeTitleLabel.text = isRu ? "Доходы" : "Income"
+        expenseTitleLabel.text = isRu ? "Расходы" : "Expense"
+        accountsTitleLabel.text = isRu ? "Связанные счета накоплений" : "Affiliated savings accounts"
+        accountsValueLabel.text = isRu ? "Основной / Дополнительный" : "Main / Additional"
     }
     
     // MARK: - Public Methods

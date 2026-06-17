@@ -51,7 +51,7 @@ public class ProcessTransactionCommandHandler : IRequestHandler<ProcessTransacti
             Type = request.Type,
             Title = request.Title,
             Category = request.Category,
-            Date = DateTime.UtcNow
+            Date = request.Date ?? DateTime.UtcNow
         };
 
         // Логика изменения баланса игрока

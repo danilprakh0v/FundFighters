@@ -91,7 +91,8 @@ public class GameController : ControllerBase
                 request.Amount,
                 (TransactionType)request.Type,
                 request.Title,
-                request.Category
+                request.Category,
+                request.Date
             );
 
             var result = await _mediator.Send(command);

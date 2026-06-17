@@ -48,7 +48,7 @@ final class TutorialViewController: UIViewController {
     ]
     
     private var currentStepIndex = 0
-    private var isRussian = false
+    private var isRussian: Bool { UserManager.shared.isRussian }
     
     // MARK: - UI Компоненты
     
@@ -68,11 +68,23 @@ final class TutorialViewController: UIViewController {
     
     public lazy var langButton: UIButton = {
         var cfg = UIButton.Configuration.filled()
-        cfg.title = "EN"
-        cfg.baseBackgroundColor = UIColor.systemGray6
-        cfg.baseForegroundColor = DS.textPrimary
+        cfg.title = UserManager.shared.isRussian ? "RU" : "EN"
+        cfg.image = UIImage(systemName: "globe")
+        cfg.imagePadding = 4
+        cfg.baseBackgroundColor = DS.accent.withAlphaComponent(0.12)
+        cfg.baseForegroundColor = DS.accent
         cfg.cornerStyle = .capsule
+        cfg.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
         let b = UIButton(configuration: cfg)
+        b.titleLabel?.font = DS.golosSemi(14)
+        b.titleLabel?.numberOfLines = 1
+        b.titleLabel?.lineBreakMode = .byClipping
+        b.layer.borderColor = DS.accent.withAlphaComponent(0.22).cgColor
+        b.layer.borderWidth = 1
+        b.layer.shadowColor = DS.accent.cgColor
+        b.layer.shadowOpacity = 0.12
+        b.layer.shadowOffset = CGSize(width: 0, height: 4)
+        b.layer.shadowRadius = 10
         b.translatesAutoresizingMaskIntoConstraints = false
         b.addTarget(self, action: #selector(toggleLang), for: .touchUpInside)
         return b
@@ -147,8 +159,8 @@ final class TutorialViewController: UIViewController {
             
             langButton.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
             langButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            langButton.heightAnchor.constraint(equalToConstant: 32),
-            langButton.widthAnchor.constraint(equalToConstant: 54),
+            langButton.heightAnchor.constraint(equalToConstant: 34),
+            langButton.widthAnchor.constraint(equalToConstant: 78),
             
             iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 40),
             iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
@@ -175,9 +187,17 @@ final class TutorialViewController: UIViewController {
     
     // --- Обработка нажатий ---
     @objc private func toggleLang() {
-        isRussian.toggle()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
+            self.langButton.transform = CGAffineTransform(scaleX: 0.94, y: 0.94)
+        } completion: { _ in
+            UIView.animate(withDuration: 0.34, delay: 0, usingSpringWithDamping: 0.62, initialSpringVelocity: 0.6, options: [.allowUserInteraction]) {
+                self.langButton.transform = .identity
+            }
+        }
+        UserManager.shared.isRussian.toggle()
         UIView.transition(with: langButton, duration: 0.2, options: .transitionCrossDissolve, animations: {
-            self.langButton.configuration?.title = self.isRussian ? "RU" : "EN"
+            self.updateLangButton()
         })
         updateStep(animated: true)
     }
@@ -212,5 +232,11 @@ final class TutorialViewController: UIViewController {
         } else {
             block()
         }
+    }
+
+    private func updateLangButton() {
+        langButton.configuration?.title = isRussian ? "RU" : "EN"
+        langButton.configuration?.baseBackgroundColor = DS.accent.withAlphaComponent(isRussian ? 0.18 : 0.12)
+        langButton.configuration?.baseForegroundColor = DS.accent
     }
 }

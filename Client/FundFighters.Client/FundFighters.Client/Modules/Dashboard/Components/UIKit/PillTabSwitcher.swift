@@ -13,100 +13,48 @@
 
 import UIKit
 
-final class PillTabSwitcher: UIView {
+final class PillTabSwitcher: UISegmentedControl {
 
     var onTabChanged: ((Int) -> Void)?
 
-    private let items: [String]
-    private var buttons: [UIButton] = []
-    private let activePill = UIView()
-    private var activePillLeading: NSLayoutConstraint?
-    private var activePillWidth: NSLayoutConstraint?
-
-    private(set) var selectedIndex: Int = 0 {
-        didSet { animatePill(to: selectedIndex) }
-    }
-
-    private let accentGreen = UIColor(red: 30/255, green: 140/255, blue: 98/255, alpha: 1)
-    private let pillInactive = UIColor(red: 215/255, green: 215/255, blue: 210/255, alpha: 1)
-
     init(items: [String]) {
-        self.items = items
-        super.init(frame: .zero)
+        super.init(items: items)
         setupView()
     }
+
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupView() {
-        backgroundColor = pillInactive
+        selectedSegmentIndex = 0
+        backgroundColor = UIColor.white.withAlphaComponent(0.52)
+        selectedSegmentTintColor = DT.accentGreen
         layer.cornerRadius = 22
-        clipsToBounds = true
+        layer.cornerCurve = .continuous
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.white.withAlphaComponent(0.72).cgColor
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.06
+        layer.shadowRadius = 12
+        layer.shadowOffset = CGSize(width: 0, height: 7)
 
-        activePill.backgroundColor = accentGreen
-        activePill.layer.cornerRadius = 20
-        activePill.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(activePill)
-
-        activePillLeading = activePill.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2)
-        activePillLeading?.isActive = true
-        activePill.topAnchor.constraint(equalTo: topAnchor, constant: 2).isActive = true
-        activePill.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2).isActive = true
-        activePillWidth = activePill.widthAnchor.constraint(equalToConstant: 100)
-        activePillWidth?.isActive = true
-
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
-
-        for (i, title) in items.enumerated() {
-            let btn = UIButton(type: .system)
-            btn.setTitle(title, for: .normal)
-            btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-            btn.tag = i
-            btn.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
-            stack.addArrangedSubview(btn)
-            buttons.append(btn)
-        }
-        updateButtonColors(activeIndex: 0, animated: false)
+        setTitleTextAttributes([
+            .foregroundColor: DS.textPrimary,
+            .font: DS.golosMedium(17)
+        ], for: .normal)
+        setTitleTextAttributes([
+            .foregroundColor: UIColor.white,
+            .font: DS.golosBold(18)
+        ], for: .selected)
+        addTarget(self, action: #selector(tabTapped), for: .valueChanged)
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        guard !bounds.isEmpty, items.count > 0 else { return }
-        let segW = bounds.width / CGFloat(items.count)
-        activePillWidth?.constant = segW - 4
-        activePillLeading?.constant = CGFloat(selectedIndex) * segW + 2
+    /// Programmatically select a tab. Does NOT fire `onTabChanged`.
+    func selectIndex(_ index: Int, animated: Bool = false) {
+        guard index >= 0 && index < numberOfSegments else { return }
+        selectedSegmentIndex = index
     }
 
-    @objc private func tabTapped(_ sender: UIButton) {
-        selectedIndex = sender.tag
-        onTabChanged?(selectedIndex)
-    }
-
-    private func animatePill(to index: Int) {
-        guard !bounds.isEmpty, items.count > 0 else { return }
-        let segW = bounds.width / CGFloat(items.count)
-        activePillLeading?.constant = CGFloat(index) * segW + 2
-        updateButtonColors(activeIndex: index, animated: true)
-        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.4, options: .curveEaseInOut) {
-            self.layoutIfNeeded()
-        }
-    }
-
-    private func updateButtonColors(activeIndex: Int, animated: Bool) {
-        let change = {
-            for (i, btn) in self.buttons.enumerated() {
-                btn.setTitleColor(i == activeIndex ? .white : UIColor(white: 0.45, alpha: 1), for: .normal)
-            }
-        }
-        if animated { UIView.animate(withDuration: 0.2, animations: change) } else { change() }
+    @objc private func tabTapped() {
+        onTabChanged?(selectedSegmentIndex)
     }
 }

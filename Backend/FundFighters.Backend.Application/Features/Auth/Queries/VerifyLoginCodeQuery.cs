@@ -74,4 +74,14 @@ public class VerifyLoginCodeResponse
     /// JWT access token (set if verification succeeded).
     /// </summary>
     public string? Token { get; set; }
+
+    /// <summary>
+    /// Email игрока.
+    /// </summary>
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Текущее состояние двухфакторной аутентификации.
+    /// </summary>
+    public bool IsTwoFactorEnabled { get; set; }
 }

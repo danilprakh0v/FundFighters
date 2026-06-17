@@ -60,9 +60,15 @@ final class LoginViewModel {
                 // 4. Save Token + Username / Сохраняем токен и имя
                 if let token = response.token {
                     TokenManager.shared.save(token)
-                    // Сохраняем username из ответа сервера
-                    if let username = response.username, !username.isEmpty {
-                        UserManager.shared.session.username = username
+                    // Server username is the source of truth after login.
+                    let serverUsername = response.username ?? ""
+                    UserManager.shared.saveProfile(
+                        username: serverUsername.isEmpty ? "Fighter" : serverUsername,
+                        email: response.email,
+                        userId: response.userId
+                    )
+                    if let isTwoFactorEnabled = response.isTwoFactorEnabled {
+                        UserManager.shared.saveTwoFactorEnabled(isTwoFactorEnabled)
                     }
                     // Navigate to Dashboard / Переход на главный экран
                     DispatchQueue.main.async {
@@ -108,5 +114,3 @@ final class LoginViewModel {
         }
     }
 }
-
-

@@ -49,6 +49,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 22
+        iv.isUserInteractionEnabled = true
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
@@ -56,8 +57,12 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     private let welcomeLabel: UILabel = {
         let l = UILabel()
         l.text = "С возвращением!"
-        l.font = DS.golosSemi(14)
+        l.font = DS.golosSemi(13)
         l.textColor = DS.accent
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.70
+        l.numberOfLines = 1
+        l.lineBreakMode = .byTruncatingTail
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -67,6 +72,10 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         l.text = "Боец"
         l.font = DS.golosBold(22)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.62
+        l.numberOfLines = 1
+        l.lineBreakMode = .byTruncatingTail
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -74,22 +83,28 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     private lazy var langButton: UIButton = {
         var cfg = UIButton.Configuration.filled()
         cfg.title = UserManager.shared.isRussian ? "RU" : "EN"
-        cfg.baseBackgroundColor = UIColor.systemGray6
-        cfg.baseForegroundColor = DS.textPrimary
+        cfg.image = UIImage(systemName: "globe")
+        cfg.imagePadding = 3
+        cfg.baseBackgroundColor = DS.accent.withAlphaComponent(0.12)
+        cfg.baseForegroundColor = DS.accent
         cfg.cornerStyle = .capsule
+        cfg.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
         let b = UIButton(configuration: cfg)
+        b.titleLabel?.font = DS.golosSemi(14)
+        b.titleLabel?.numberOfLines = 1
+        b.titleLabel?.lineBreakMode = .byClipping
+        b.layer.borderColor = DS.accent.withAlphaComponent(0.22).cgColor
+        b.layer.borderWidth = 1
+        b.layer.shadowColor = DS.accent.cgColor
+        b.layer.shadowOpacity = 0.10
+        b.layer.shadowOffset = CGSize(width: 0, height: 3)
+        b.layer.shadowRadius = 8
         b.translatesAutoresizingMaskIntoConstraints = false
         b.addTarget(self, action: #selector(toggleLang), for: .touchUpInside)
         return b
     }()
 
-    private let notifButton: UIButton = {
-        let b = UIButton(type: .custom)
-        b.setImage(UIImage(named: "notf_inact"), for: .normal)
-        b.imageView?.contentMode = .scaleAspectFit
-        b.translatesAutoresizingMaskIntoConstraints = false
-        return b
-    }()
+    private let notifButton = NotificationBellButton()
 
     private let logoutButton: UIButton = {
         let b = UIButton(type: .system)
@@ -149,22 +164,46 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
 
     private lazy var leftArrowButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setImage(UIImage(systemName: "chevron.compact.left",
-                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 28, weight: .light)),
+        b.setImage(UIImage(systemName: "chevron.left",
+                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)),
                    for: .normal)
-        b.tintColor = UIColor.black.withAlphaComponent(0.25)
+        b.tintColor = UIColor.black.withAlphaComponent(0.58)
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.78)
+        b.layer.cornerRadius = 16
+        b.layer.cornerCurve = .continuous
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
+        b.layer.shadowColor = UIColor.black.cgColor
+        b.layer.shadowOpacity = 0.08
+        b.layer.shadowRadius = 10
+        b.layer.shadowOffset = CGSize(width: 0, height: 4)
         b.translatesAutoresizingMaskIntoConstraints = false
+        decoratePageArrow(b)
+        b.addTarget(self, action: #selector(pageArrowTouchDown(_:)), for: .touchDown)
+        b.addTarget(self, action: #selector(pageArrowTouchUp(_:)), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         b.addTarget(self, action: #selector(pageLeft), for: .touchUpInside)
         return b
     }()
 
     private lazy var rightArrowButton: UIButton = {
         let b = UIButton(type: .system)
-        b.setImage(UIImage(systemName: "chevron.compact.right",
-                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 28, weight: .light)),
+        b.setImage(UIImage(systemName: "chevron.right",
+                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)),
                    for: .normal)
-        b.tintColor = UIColor.black.withAlphaComponent(0.25)
+        b.tintColor = UIColor.black.withAlphaComponent(0.58)
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.78)
+        b.layer.cornerRadius = 16
+        b.layer.cornerCurve = .continuous
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
+        b.layer.shadowColor = UIColor.black.cgColor
+        b.layer.shadowOpacity = 0.08
+        b.layer.shadowRadius = 10
+        b.layer.shadowOffset = CGSize(width: 0, height: 4)
         b.translatesAutoresizingMaskIntoConstraints = false
+        decoratePageArrow(b)
+        b.addTarget(self, action: #selector(pageArrowTouchDown(_:)), for: .touchDown)
+        b.addTarget(self, action: #selector(pageArrowTouchUp(_:)), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         b.addTarget(self, action: #selector(pageRight), for: .touchUpInside)
         return b
     }()
@@ -181,7 +220,11 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         bindViewModel()
         
         NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateAvatar), name: NSNotification.Name("AvatarChanged"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateUsername), name: NSNotification.Name("UsernameChanged"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateEnemyGoal), name: NSNotification.Name("EnemyChanged"), object: nil)
         updateLocalization()
+        updateAvatar()
         
         // Отображение начальных данных во время загрузки
         updateUI()
@@ -190,16 +233,82 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     }
     
     @objc private func toggleLang() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
+            self.langButton.transform = CGAffineTransform(scaleX: 0.94, y: 0.94)
+        } completion: { _ in
+            UIView.animate(withDuration: 0.34, delay: 0, usingSpringWithDamping: 0.62, initialSpringVelocity: 0.6, options: [.allowUserInteraction]) {
+                self.langButton.transform = .identity
+            }
+        }
         UserManager.shared.isRussian.toggle()
     }
 
     @objc private func updateLocalization() {
         let isRu = UserManager.shared.isRussian
-        langButton.configuration?.title = isRu ? "RU" : "EN"
-        welcomeLabel.text = isRu ? "С возвращением!" : "Welcome back!"
+        UIView.transition(with: langButton, duration: 0.22, options: [.transitionCrossDissolve, .allowUserInteraction]) {
+            self.langButton.configuration?.title = isRu ? "RU" : "EN"
+            self.langButton.configuration?.baseBackgroundColor = DS.accent.withAlphaComponent(isRu ? 0.18 : 0.12)
+        }
+        welcomeLabel.text = isRu ? "С возвращением" : "Welcome back"
         goalsTitleLabel.text = isRu ? "Цели / Враги" : "Goals / Enemies"
-        savingsGoalName = isRu ? "Нет активной цели" : "No active goal"
+        if savingsTargetAmount <= 0 {
+            savingsGoalName = isRu ? "Нет активной цели" : "No active goal"
+        }
         refreshSavingsCard()
+    }
+
+    @objc private func updateAvatar() {
+        if let data = UserManager.shared.avatarData(), let image = UIImage(data: data) {
+            avatarImageView.image = image
+        } else {
+            avatarImageView.image = UIImage(named: "avatar_placeholder")
+        }
+    }
+
+    @objc private func updateUsername() {
+        // Always use locally stored username (user may have customized it)
+        nameLabel.text = UserManager.shared.session.username
+    }
+
+    @objc private func updateEnemyGoal() {
+        let session = UserManager.shared.session
+        if !session.savingsGoalName.isEmpty {
+            savingsGoalName = session.savingsGoalName
+            savingsCurrentAmount = session.savingsCurrent
+            savingsTargetAmount = session.savingsTarget
+            refreshSavingsCard()
+            battleCardView.configure(battles: viewModel.dashboard?.recentBattles ?? [])
+        }
+    }
+
+    private func decoratePageArrow(_ button: UIButton) {
+        let blur: UIVisualEffectView
+        if #available(iOS 26.0, *) {
+            blur = UIVisualEffectView(effect: UIGlassEffect())
+        } else {
+            blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialLight))
+        }
+        blur.isUserInteractionEnabled = false
+        blur.alpha = 0.62
+        blur.clipsToBounds = true
+        blur.layer.cornerRadius = 16
+        blur.layer.cornerCurve = .continuous
+        blur.layer.borderWidth = 1
+        blur.layer.borderColor = UIColor.white.withAlphaComponent(0.86).cgColor
+        blur.translatesAutoresizingMaskIntoConstraints = false
+        button.insertSubview(blur, at: 0)
+        NSLayoutConstraint.activate([
+            blur.topAnchor.constraint(equalTo: button.topAnchor),
+            blur.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+            blur.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            blur.trailingAnchor.constraint(equalTo: button.trailingAnchor)
+        ])
+        DispatchQueue.main.async {
+            if let imageView = button.imageView {
+                button.bringSubviewToFront(imageView)
+            }
+        }
     }
 
     deinit {
@@ -234,6 +343,10 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         welcomeStack.axis = .vertical
         welcomeStack.spacing = 2
         welcomeStack.translatesAutoresizingMaskIntoConstraints = false
+        welcomeStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        welcomeStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        welcomeLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let headerStack = UIStackView(arrangedSubviews: [avatarImageView, welcomeStack, UIView(), langButton, notifButton, logoutButton])
         headerStack.axis = .horizontal
@@ -248,7 +361,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         pagingContainer.addSubview(leftArrowButton)
         pagingContainer.addSubview(rightArrowButton)
         
-        pagingContainer.clipsToBounds = true
+        pagingContainer.clipsToBounds = false
         horizontalScrollView.addSubview(horizontalStack)
 
         let screenWidth = UIScreen.main.bounds.width
@@ -290,8 +403,10 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             headerStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -pad),
             avatarImageView.widthAnchor.constraint(equalToConstant: 44),
             avatarImageView.heightAnchor.constraint(equalToConstant: 44),
-            notifButton.widthAnchor.constraint(equalToConstant: 40),
-            notifButton.heightAnchor.constraint(equalToConstant: 40),
+            langButton.widthAnchor.constraint(equalToConstant: 78),
+            langButton.heightAnchor.constraint(equalToConstant: 32),
+            notifButton.widthAnchor.constraint(equalToConstant: 44),
+            notifButton.heightAnchor.constraint(equalToConstant: 44),
             logoutButton.widthAnchor.constraint(equalToConstant: 40),
             logoutButton.heightAnchor.constraint(equalToConstant: 40),
 
@@ -329,15 +444,15 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             horizontalStack.heightAnchor.constraint(equalTo: horizontalScrollView.frameLayoutGuide.heightAnchor),
 
             // Кнопки навигации (стрелки)
-            leftArrowButton.leadingAnchor.constraint(equalTo: pagingContainer.leadingAnchor),
+            leftArrowButton.leadingAnchor.constraint(equalTo: pagingContainer.leadingAnchor, constant: 4),
             leftArrowButton.centerYAnchor.constraint(equalTo: pagingContainer.centerYAnchor),
-            leftArrowButton.widthAnchor.constraint(equalToConstant: 20),
-            leftArrowButton.heightAnchor.constraint(equalToConstant: 100),
+            leftArrowButton.widthAnchor.constraint(equalToConstant: 32),
+            leftArrowButton.heightAnchor.constraint(equalToConstant: 32),
 
-            rightArrowButton.trailingAnchor.constraint(equalTo: pagingContainer.trailingAnchor),
+            rightArrowButton.trailingAnchor.constraint(equalTo: pagingContainer.trailingAnchor, constant: -4),
             rightArrowButton.centerYAnchor.constraint(equalTo: pagingContainer.centerYAnchor),
-            rightArrowButton.widthAnchor.constraint(equalToConstant: 20),
-            rightArrowButton.heightAnchor.constraint(equalToConstant: 100),
+            rightArrowButton.widthAnchor.constraint(equalToConstant: 32),
+            rightArrowButton.heightAnchor.constraint(equalToConstant: 32),
         ])
     }
 
@@ -346,23 +461,56 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     private func setupActions() {
         refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
         logoutButton.addTarget(self, action: #selector(handleLogout), for: .touchUpInside)
+        notifButton.addTarget(self, action: #selector(handleNotifications), for: .touchUpInside)
         savingsGoalCard.onFightTapped = { [weak self] in self?.navigateToBattle() }
         
         recentActivityView.onDeleteTransaction = { [weak self] id in
             self?.handleDeleteTransaction(id: id)
         }
+
+        // Avatar tap -> navigate to Profile tab
+        let avatarTap = UITapGestureRecognizer(target: self, action: #selector(avatarTapped))
+        avatarImageView.addGestureRecognizer(avatarTap)
+    }
+
+    @objc private func avatarTapped() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        UIView.animate(withDuration: 0.10, animations: {
+            self.avatarImageView.transform = CGAffineTransform(scaleX: 0.90, y: 0.90)
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.28, delay: 0, usingSpringWithDamping: 0.55, initialSpringVelocity: 0.5) {
+                self.avatarImageView.transform = .identity
+            }
+        })
+        (tabBarController as? MainTabBarController)?.switchToTab(4)
     }
 
     @objc private func handleLogout() {
-        let alert = UIAlertController(title: "Log out", message: "Are you sure you want to log out?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Log out", style: .destructive, handler: { _ in
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(
+            title: isRu ? "Выйти?" : "Log out?",
+            message: isRu ? "Текущая сессия будет завершена." : "Your current session will be ended.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: isRu ? "Выйти" : "Log out", style: .destructive, handler: { _ in
             UserManager.shared.logout()
             guard let window = self.view.window else { return }
             UIView.transition(with: window, duration: 0.5, options: .transitionFlipFromRight, animations: {
                 window.rootViewController = SplashViewController()
             }, completion: nil)
         }))
+        present(alert, animated: true)
+    }
+
+    @objc private func handleNotifications() {
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(
+            title: isRu ? "Уведомления" : "Notifications",
+            message: isRu ? "Здесь будут напоминания по целям, отчётам и безопасности." : "Goal, report and security reminders will appear here.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
 
@@ -387,7 +535,26 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             }
         }
         viewModel.onError = { [weak self] _ in
-            DispatchQueue.main.async { self?.refreshControl.endRefreshing() }
+            DispatchQueue.main.async {
+                self?.refreshControl.endRefreshing()
+                let isRu = UserManager.shared.isRussian
+                let alert = UIAlertController(
+                    title: isRu ? "Ошибка сервера" : "Server Error",
+                    message: isRu ? "Не удалось загрузить данные аккаунта. Сервер временно недоступен." : "Could not load account data. The server is temporarily unavailable.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                    UserManager.shared.logout()
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let window = windowScene.windows.first {
+                        let loginVC = UINavigationController(rootViewController: LoginViewController())
+                        loginVC.isNavigationBarHidden = true
+                        window.rootViewController = loginVC
+                        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
+                    }
+                }))
+                self?.present(alert, animated: true)
+            }
         }
     }
 
@@ -396,9 +563,11 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     private func updateUI() {
         refreshControl.endRefreshing()
 
-        // Заголовок
-        let username = viewModel.dashboard?.userInfo.username ?? UserManager.shared.session.username
-        nameLabel.text = username
+        // Заголовок — берём локально сохранённое имя, не перетираем его серверным
+        let localName = UserManager.shared.session.username
+        let serverName = viewModel.dashboard?.userInfo.username ?? ""
+        let username = (localName == "Fighter" || localName.isEmpty) ? serverName : localName
+        nameLabel.text = username.isEmpty ? localName : username
 
         // Карточка баланса
         if let balance = viewModel.dashboard?.balanceInfo {
@@ -425,8 +594,14 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             )
         }
 
-        // Цели накопления
-        if let goal = viewModel.dashboard?.activeGoal {
+        // Цели накопления. Пока цель работает как мок, локальная сессия важнее API,
+        // чтобы прогресс не сбрасывался после refresh / возврата с битвы.
+        let sessionGoal = UserManager.shared.session
+        if sessionGoal.savingsTarget > 0 {
+            savingsCurrentAmount = sessionGoal.savingsCurrent
+            savingsTargetAmount  = sessionGoal.savingsTarget
+            savingsGoalName      = sessionGoal.savingsGoalName
+        } else if let goal = viewModel.dashboard?.activeGoal {
             savingsCurrentAmount = NSDecimalNumber(decimal: goal.currentAmount).doubleValue
             savingsTargetAmount  = NSDecimalNumber(decimal: goal.targetAmount).doubleValue
             savingsGoalName      = goal.goalName
@@ -464,11 +639,14 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
     @objc private func handleRefresh() { viewModel.loadDashboard() }
 
     private func refreshSavingsCard() {
-        let pct = savingsTargetAmount > 0 ? savingsCurrentAmount / savingsTargetAmount : 0
+        let current = savingsTargetAmount > 0 ? savingsCurrentAmount : 23250
+        let target = savingsTargetAmount > 0 ? savingsTargetAmount : 62000
+        let goalName = savingsTargetAmount > 0 ? savingsGoalName : "PlayStation 5 Slim"
+        let pct = target > 0 ? current / target : 0
         savingsGoalCard.configure(
-            goalName: savingsGoalName,
-            current:  formatCurrency(savingsCurrentAmount),
-            target:   formatCurrency(savingsTargetAmount),
+            goalName: goalName,
+            current:  formatCurrency(current),
+            target:   formatCurrency(target),
             percent:  String(format: "%.1f%%", pct * 100),
             progress: pct
         )
@@ -487,6 +665,7 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
             self.savingsCurrentAmount = current
             self.savingsTargetAmount  = target
             self.savingsGoalName      = name
+            UserManager.shared.saveSavingsGoal(current: current, target: target, name: name)
             self.refreshSavingsCard()
         }
 
@@ -505,6 +684,22 @@ final class DashboardViewControllerUIKit: UIViewController, UIScrollViewDelegate
         guard currentPage < 2 else { return }
         currentPage += 1
         scrollToPage(currentPage)
+    }
+
+    @objc private func pageArrowTouchDown(_ sender: UIButton) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let isRight = sender === rightArrowButton
+        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseInOut, .allowUserInteraction, .beginFromCurrentState]) {
+            sender.transform = CGAffineTransform(scaleX: isRight ? 1.20 : 1.12, y: 0.88)
+            sender.backgroundColor = UIColor.white.withAlphaComponent(0.92)
+        }
+    }
+
+    @objc private func pageArrowTouchUp(_ sender: UIButton) {
+        UIView.animate(withDuration: 0.34, delay: 0, usingSpringWithDamping: 0.58, initialSpringVelocity: 0.7, options: [.allowUserInteraction, .beginFromCurrentState]) {
+            sender.transform = .identity
+            sender.backgroundColor = UIColor.white.withAlphaComponent(0.78)
+        }
     }
 
     private func scrollToPage(_ page: Int) {

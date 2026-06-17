@@ -13,8 +13,11 @@
 
 using FundFighters.Backend.Application.Features.Auth.Commands;
 using FundFighters.Backend.Application.Features.Auth.Queries;
+using FundFighters.Backend.Domain.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FundFighters.Backend.API.Controllers;
 
@@ -27,11 +30,13 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
+    private readonly IGameRepository _repository;
 
-    public AuthController(IMediator mediator, ILogger<AuthController> logger)
+    public AuthController(IMediator mediator, ILogger<AuthController> logger, IGameRepository repository)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
     /// <summary>
@@ -240,6 +245,81 @@ public class AuthController : ControllerBase
         _logger.LogInformation($"Пароль успешно изменен для: {request.Email}");
         return Ok(response);
     }
+
+    /// <summary>
+    /// Переключение двухфакторной аутентификации для текущего пользователя.
+    /// </summary>
+    [Authorize]
+    [HttpPut("two-factor")]
+    [ProducesResponseType(typeof(TwoFactorStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateTwoFactor([FromBody] UpdateTwoFactorRequest request)
+    {
+        var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(playerId))
+        {
+            return Unauthorized(new { message = "Ошибка идентификации пользователя." });
+        }
+
+        var player = await _repository.GetPlayerByIdAsync(playerId);
+        if (player is null)
+        {
+            return NotFound(new { message = "Пользователь не найден." });
+        }
+
+        player.IsTwoFactorEnabled = request.Enabled;
+        await _repository.SaveChangesAsync();
+
+        _logger.LogInformation($"2FA updated for player {playerId}: {request.Enabled}");
+        return Ok(new TwoFactorStatusResponse
+        {
+            IsTwoFactorEnabled = player.IsTwoFactorEnabled
+        });
+    }
+
+    /// <summary>
+    /// Обновление профиля текущего пользователя.
+    /// </summary>
+    [Authorize]
+    [HttpPut("profile")]
+    [ProducesResponseType(typeof(ProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var playerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(playerId))
+        {
+            return Unauthorized(new { message = "Ошибка идентификации пользователя." });
+        }
+
+        var username = request?.Username?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(username) || username.Length > 32)
+        {
+            return BadRequest(new { message = "Имя должно содержать от 1 до 32 символов." });
+        }
+
+        var player = await _repository.GetPlayerByIdAsync(playerId);
+        if (player is null)
+        {
+            return NotFound(new { message = "Пользователь не найден." });
+        }
+
+        player.Username = username;
+        player.UpdatedAt = DateTime.UtcNow;
+        await _repository.SaveChangesAsync();
+
+        _logger.LogInformation($"Profile updated for player {playerId}");
+        return Ok(new ProfileResponse
+        {
+            Username = player.Username,
+            Email = player.Email,
+            PlayerId = player.Id,
+            IsTwoFactorEnabled = player.IsTwoFactorEnabled
+        });
+    }
 }
 
 /// <summary>
@@ -295,4 +375,39 @@ public class ResetPasswordRequest
     public string Email { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string NewPassword { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Запрос на переключение двухфакторной аутентификации.
+/// </summary>
+public class UpdateTwoFactorRequest
+{
+    public bool Enabled { get; set; }
+}
+
+/// <summary>
+/// Текущее состояние двухфакторной аутентификации.
+/// </summary>
+public class TwoFactorStatusResponse
+{
+    public bool IsTwoFactorEnabled { get; set; }
+}
+
+/// <summary>
+/// Запрос на обновление профиля.
+/// </summary>
+public class UpdateProfileRequest
+{
+    public string Username { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Актуальное состояние профиля после сохранения.
+/// </summary>
+public class ProfileResponse
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public int PlayerId { get; set; }
+    public bool IsTwoFactorEnabled { get; set; }
 }

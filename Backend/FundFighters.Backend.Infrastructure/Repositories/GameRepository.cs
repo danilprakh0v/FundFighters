@@ -94,7 +94,7 @@ public class GameRepository : IGameRepository
         {
             return await _dbContext.Transactions
                 .Where(t => t.PlayerId == playerIdInt)
-                .OrderByDescending(t => t.CreatedAt)
+                .OrderByDescending(t => t.Date)
                 .ToListAsync(cancellationToken);
         }
         return new List<Transaction>();
@@ -161,9 +161,13 @@ public class GameRepository : IGameRepository
     /// </summary>
     public async Task AddTransactionAsync(Transaction transaction)
     {
-        transaction.Date = DateTime.UtcNow;
-        transaction.CreatedAt = DateTime.UtcNow;
-        transaction.UpdatedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        if (transaction.Date == default)
+        {
+            transaction.Date = now;
+        }
+        transaction.CreatedAt = now;
+        transaction.UpdatedAt = now;
 
         await _dbContext.Transactions.AddAsync(transaction);
     }

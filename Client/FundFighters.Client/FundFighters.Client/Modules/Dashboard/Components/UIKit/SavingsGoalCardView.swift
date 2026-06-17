@@ -25,6 +25,8 @@ final class SavingsGoalCardView: UIView {
     private let heartSpacing: CGFloat = 3
 
     private var swordOverhang: CGFloat { heartW * (57.0 / 45.0) - heartW }
+    private var lastCurrent: String = ""
+    private var lastTarget: String = ""
 
     // MARK: - Subviews
 
@@ -34,7 +36,7 @@ final class SavingsGoalCardView: UIView {
         l.font = DS.interSemi(14)
         l.textColor = DS.textPrimary
         l.adjustsFontSizeToFitWidth = true
-        l.minimumScaleFactor = 0.85
+        l.minimumScaleFactor = 0.72
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
@@ -43,6 +45,8 @@ final class SavingsGoalCardView: UIView {
     // InterExtraBold 14 — «23,250₽ / 62,000₽»
     private let amountLabel: UILabel = {
         let l = UILabel()
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.72
         l.setContentCompressionResistancePriority(.required, for: .horizontal)
         l.setContentHuggingPriority(.required, for: .horizontal)
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -76,6 +80,9 @@ final class SavingsGoalCardView: UIView {
     private let messageLabel: UILabel = {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
+        l.numberOfLines = 1
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.72
         return l
     }()
 
@@ -114,8 +121,13 @@ final class SavingsGoalCardView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
     }
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     // MARK: - layoutSubviews
 
@@ -168,7 +180,7 @@ final class SavingsGoalCardView: UIView {
             percentBadge.topAnchor.constraint(equalTo: goalNameLabel.topAnchor),
             percentBadge.bottomAnchor.constraint(equalTo: goalNameLabel.bottomAnchor),
             percentBadge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            percentBadge.leadingAnchor.constraint(greaterThanOrEqualTo: amountLabel.trailingAnchor, constant: 8),
+            percentBadge.leadingAnchor.constraint(greaterThanOrEqualTo: amountLabel.trailingAnchor, constant: 6),
 
             // ── Строка 2: сердца ──
             heartsRow.topAnchor.constraint(equalTo: goalNameLabel.bottomAnchor, constant: 14),
@@ -179,7 +191,7 @@ final class SavingsGoalCardView: UIView {
             messageLabel.topAnchor.constraint(equalTo: heartsRow.bottomAnchor, constant: 10),
             messageLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             messageLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
-            messageLabel.trailingAnchor.constraint(lessThanOrEqualTo: fightButton.leadingAnchor, constant: -10),
+            messageLabel.trailingAnchor.constraint(lessThanOrEqualTo: fightButton.leadingAnchor, constant: -8),
 
             // ── Кнопка ──
             fightButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
@@ -204,6 +216,8 @@ final class SavingsGoalCardView: UIView {
                    percent: String,
                    progress: Double) {
 
+        lastCurrent = current
+        lastTarget = target
         goalNameLabel.text = goalName
         percentBadge.text  = percent.replacingOccurrences(of: ".", with: ",")
 
@@ -218,6 +232,11 @@ final class SavingsGoalCardView: UIView {
 
         messageLabel.attributedText = buildMessage(current: current, target: target)
         buildHearts(progress: progress)
+    }
+
+    @objc private func updateLocalization() {
+        guard !lastCurrent.isEmpty, !lastTarget.isEmpty else { return }
+        messageLabel.attributedText = buildMessage(current: lastCurrent, target: lastTarget)
     }
 
     // MARK: - Hearts
@@ -267,15 +286,16 @@ final class SavingsGoalCardView: UIView {
         let rem = max(0, parseAmount(target) - parseAmount(current))
         guard rem > 0 else {
             return NSAttributedString(
-                string: "Goal achieved! 🎉",
+                string: UserManager.shared.isRussian ? "Цель достигнута! 🎉" : "Goal achieved! 🎉",
                 attributes: [.font: DS.interBold(14), .foregroundColor: accentColor])
         }
+        let isRu = UserManager.shared.isRussian
         let msg = NSMutableAttributedString()
         msg.append(NSAttributedString(
             string: formatAmount(rem) + "₽",
             attributes: [.font: DS.interBold(14), .foregroundColor: accentColor]))
         msg.append(NSAttributedString(
-            string: " more to win your enemy",
+            string: isRu ? " до победы над врагом" : " more to win your enemy",
             attributes: [.font: DS.interMedium(14), .foregroundColor: DS.textPrimary]))
         return msg
     }
@@ -284,6 +304,8 @@ final class SavingsGoalCardView: UIView {
 
     private func parseAmount(_ s: String) -> Double {
         Double(s.replacingOccurrences(of: ",", with: "")
+                .replacingOccurrences(of: " ", with: "")
+                .replacingOccurrences(of: "\u{00a0}", with: "")
                 .replacingOccurrences(of: "₽", with: "")
                 .replacingOccurrences(of: "P",  with: "")
                 .trimmingCharacters(in: .whitespaces)) ?? 0

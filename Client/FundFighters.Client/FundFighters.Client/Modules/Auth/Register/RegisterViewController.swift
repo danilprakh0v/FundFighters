@@ -179,35 +179,6 @@ fileprivate final class LiquidGlassPaginationPill: UIView {
 }
 
 // MARK: - GreenCircleButton (Круглая кнопка)
-fileprivate final class GreenCircleButton: UIButton {
-    init(iconName: String) {
-        super.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        if #available(iOS 26.0, *) {
-            var cfg = UIButton.Configuration.prominentGlass()
-            cfg.image = UIImage(systemName: iconName,
-                                withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold))
-            cfg.baseBackgroundColor = DT.accentGreen
-            cfg.baseForegroundColor = .black
-            cfg.cornerStyle = .capsule
-            self.configuration = cfg
-        } else {
-            backgroundColor = DT.accentGreen
-            setImage(UIImage(systemName: iconName,
-                             withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)),
-                     for: .normal)
-            tintColor = .black
-        }
-    }
-    required init?(coder: NSCoder) { fatalError() }
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if #unavailable(iOS 26.0) {
-            layer.cornerRadius = bounds.height / 2
-            layer.cornerCurve  = .continuous
-        }
-    }
-}
 
 // MARK: - BorderedTextField (Поле ввода с заголовком)
 fileprivate final class BorderedTextField: UIView {
@@ -479,7 +450,8 @@ final class RegistrationContainerViewController: UIViewController {
         
         viewModel.onError = { [weak self] message in
             DispatchQueue.main.async {
-                let alert = UIAlertController(title: "Registration Error", message: message, preferredStyle: .alert)
+                let isRu = UserManager.shared.isRussian
+                let alert = UIAlertController(title: isRu ? "Ошибка регистрации" : "Registration Error", message: message, preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "OK", style: .default))
                 self?.present(alert, animated: true)
             }

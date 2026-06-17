@@ -36,15 +36,8 @@ final class TransactionsViewController: UIViewController {
 
     // MARK: - UI Элементы: Заголовок
 
-    private lazy var backButton: UIButton = {
-        let b = UIButton(type: .system)
-        let cfg = UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)
-        b.setImage(UIImage(systemName: "chevron.left", withConfiguration: cfg), for: .normal)
-        b.tintColor = .black
-        b.backgroundColor = UIColor(red: 30/255, green: 140/255, blue: 98/255, alpha: 1)
-        b.layer.cornerRadius = 22
-        b.layer.cornerCurve = .continuous
-        b.translatesAutoresizingMaskIntoConstraints = false
+    private lazy var backButton: GreenCircleButton = {
+        let b = GreenCircleButton(iconName: "chevron.left")
         b.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         return b
     }()
@@ -58,12 +51,7 @@ final class TransactionsViewController: UIViewController {
         return l
     }()
 
-    private let bellButton: UIButton = {
-        let b = UIButton(type: .custom)
-        b.setImage(UIImage(named: "notf_inact"), for: .normal)
-        b.translatesAutoresizingMaskIntoConstraints = false
-        return b
-    }()
+    private let bellButton = NotificationBellButton()
 
     // MARK: - UI Элементы: Карточка баланса
 
@@ -143,6 +131,22 @@ final class TransactionsViewController: UIViewController {
         return iv
     }()
 
+    private lazy var datePickerButton: UIButton = {
+        let b = UIButton(type: .custom)
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.70)
+        b.layer.cornerRadius = 17
+        b.layer.cornerCurve = .continuous
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.white.cgColor
+        b.layer.shadowColor = UIColor.black.cgColor
+        b.layer.shadowOpacity = 0.06
+        b.layer.shadowRadius = 9
+        b.layer.shadowOffset = CGSize(width: 0, height: 5)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(showDatePicker), for: .touchUpInside)
+        return b
+    }()
+
     // MARK: - UI Элементы: Таблица
 
     private let tableView: UITableView = {
@@ -180,6 +184,7 @@ final class TransactionsViewController: UIViewController {
         view.backgroundColor = .white
         setupLayout()
         setupTableView()
+        bellButton.addTarget(self, action: #selector(notificationsTapped), for: .touchUpInside)
         updateDateUI()
         loadData()
         
@@ -193,11 +198,23 @@ final class TransactionsViewController: UIViewController {
         emptyLabel.text = isRu ? "Нет транзакций за этот день" : "No transactions for this day"
         addBtn.setTitle(isRu ? "Добавить транзакцию" : "Add transaction", for: .normal)
         dateFormatter.locale = Locale(identifier: isRu ? "ru_RU" : "en_US")
+        dateFormatter.dateFormat = isRu ? "d MMM" : "MMM d"
         updateDateUI()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func notificationsTapped() {
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(
+            title: isRu ? "Уведомления" : "Notifications",
+            message: isRu ? "Здесь будут напоминания о новых транзакциях и целях." : "Transaction and goal reminders will appear here.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -212,10 +229,11 @@ final class TransactionsViewController: UIViewController {
             view.addSubview($0)
         }
 
-        [dateSwitcherView, dateLabel, dateArrow, tableView, emptyLabel, addBtn]
+        [dateSwitcherView, datePickerButton, tableView, emptyLabel, addBtn]
             .forEach { containerView.addSubview($0) }
 
         [prevDayButton, todayLabel, nextDayButton].forEach { dateSwitcherView.addSubview($0) }
+        [dateLabel, dateArrow].forEach { datePickerButton.addSubview($0) }
 
         let safe = view.safeAreaLayoutGuide
 
@@ -261,13 +279,18 @@ final class TransactionsViewController: UIViewController {
             
             dateSwitcherView.trailingAnchor.constraint(equalTo: nextDayButton.trailingAnchor, constant: 10),
 
-            dateLabel.centerYAnchor.constraint(equalTo: dateSwitcherView.centerYAnchor),
-            dateLabel.leadingAnchor.constraint(equalTo: dateSwitcherView.trailingAnchor, constant: 12),
+            datePickerButton.centerYAnchor.constraint(equalTo: dateSwitcherView.centerYAnchor),
+            datePickerButton.leadingAnchor.constraint(equalTo: dateSwitcherView.trailingAnchor, constant: 12),
+            datePickerButton.heightAnchor.constraint(equalToConstant: 34),
 
-            dateArrow.centerYAnchor.constraint(equalTo: dateSwitcherView.centerYAnchor),
+            dateLabel.centerYAnchor.constraint(equalTo: datePickerButton.centerYAnchor),
+            dateLabel.leadingAnchor.constraint(equalTo: datePickerButton.leadingAnchor, constant: 12),
+
+            dateArrow.centerYAnchor.constraint(equalTo: datePickerButton.centerYAnchor),
             dateArrow.leadingAnchor.constraint(equalTo: dateLabel.trailingAnchor, constant: 4),
             dateArrow.widthAnchor.constraint(equalToConstant: 13),
             dateArrow.heightAnchor.constraint(equalToConstant: 13),
+            datePickerButton.trailingAnchor.constraint(equalTo: dateArrow.trailingAnchor, constant: 10),
 
             addBtn.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -140),
             addBtn.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
@@ -337,10 +360,11 @@ final class TransactionsViewController: UIViewController {
 
     private func updateDateUI() {
         let cal = Calendar.current
+        let isRu = UserManager.shared.isRussian
         if cal.isDateInToday(currentDate) {
-            todayLabel.text = "Today"
+            todayLabel.text = isRu ? "Сегодня" : "Today"
         } else if cal.isDateInYesterday(currentDate) {
-            todayLabel.text = "Yesterday"
+            todayLabel.text = isRu ? "Вчера" : "Yesterday"
         } else {
             todayLabel.text = dateFormatter.string(from: currentDate)
         }
@@ -362,7 +386,10 @@ final class TransactionsViewController: UIViewController {
     // MARK: - Обработка действий (Actions)
 
     @objc private func backTapped() {
-        if navigationController?.viewControllers.count ?? 0 > 1 {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        if let tabBar = tabBarController as? MainTabBarController {
+            tabBar.switchToTab(2)
+        } else if navigationController?.viewControllers.count ?? 0 > 1 {
             navigationController?.popViewController(animated: true)
         } else {
             dismiss(animated: true)
@@ -382,8 +409,35 @@ final class TransactionsViewController: UIViewController {
         filterAndReload()
     }
 
+    @objc private func showDatePicker() {
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(title: isRu ? "Выберите дату" : "Select Date", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .actionSheet)
+        let picker = UIDatePicker()
+        picker.datePickerMode = .date
+        picker.preferredDatePickerStyle = .wheels
+        picker.date = currentDate
+        picker.maximumDate = Date()
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        alert.view.addSubview(picker)
+
+        NSLayoutConstraint.activate([
+            picker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50),
+            picker.leadingAnchor.constraint(equalTo: alert.view.leadingAnchor),
+            picker.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor)
+        ])
+
+        alert.addAction(UIAlertAction(title: isRu ? "Применить" : "Apply", style: .default) { [weak self] _ in
+            self?.currentDate = Calendar.current.startOfDay(for: picker.date)
+            self?.updateDateUI()
+            self?.filterAndReload()
+        })
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
+        present(alert, animated: true)
+    }
+
     @objc private func addTapped() {
         let addVC = AddTransactionViewController()
+        addVC.selectedDate = currentDate
         addVC.modalPresentationStyle = .overFullScreen
         addVC.modalTransitionStyle   = .crossDissolve
         addVC.onTransactionAdded = { [weak self] in
@@ -566,10 +620,11 @@ final class TransactionCell: UITableViewCell {
     func configure(with tx: TransactionResponse) {
         titleL.text = tx.description
         let isExp   = tx.type.lowercased() == "expense"
+        let isRu = UserManager.shared.isRussian
 
         let timeFmt = DateFormatter()
         timeFmt.dateFormat = "HH:mm"
-        subL.text = "\(tx.category), \(timeFmt.string(from: tx.createdAt))"
+        subL.text = "\(getLocalizedCategory(tx.category, isRu: isRu)), \(timeFmt.string(from: tx.createdAt))"
 
         let absAmt = abs(NSDecimalNumber(decimal: tx.amount).doubleValue)
         let fmt = NumberFormatter()
@@ -582,7 +637,11 @@ final class TransactionCell: UITableViewCell {
             ? UIColor(red: 1, green: 0.27, blue: 0.23, alpha: 1)
             : DS.accent
 
-        typeL.text = tx.type
+        if isExp {
+            typeL.text = isRu ? "Расход" : "Expense"
+        } else {
+            typeL.text = isRu ? "Доход" : "Income"
+        }
 
         if let image = UIImage(named: tx.iconUrl) {
             iconImg.image = image
@@ -596,6 +655,21 @@ final class TransactionCell: UITableViewCell {
             iconImg.image = UIImage(systemName: sfSymbol, withConfiguration: cfg)
             iconImg.contentMode = .scaleAspectFit
             iconImg.tintColor = .white
+        }
+    }
+
+    private func getLocalizedCategory(_ category: String, isRu: Bool) -> String {
+        guard isRu else { return category }
+        switch category {
+            case "Subscriptions": return "Подписки"
+            case "Food": return "Еда"
+            case "Rent": return "Аренда"
+            case "Income": return "Доход"
+            case "Entertainment": return "Развлечения"
+            case "Tech": return "Техника"
+            case "Transport": return "Транспорт"
+            case "Health": return "Здоровье"
+            default: return "Другое"
         }
     }
 

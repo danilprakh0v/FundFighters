@@ -18,6 +18,8 @@ final class ExpenseChartViewUIKit: UIView {
     // MARK: - State
     private var allCategories: [ExpenseCategoryResponse] = []
     private var selectedDate: Date = Calendar.current.startOfDay(for: Date())
+    private var disabledCategoryKeys = Set<String>()
+    private var showingMock = false
 
     // MARK: - Colors
     private let colors: [UIColor] = [
@@ -31,18 +33,27 @@ final class ExpenseChartViewUIKit: UIView {
     // MARK: - UI
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text      = "Expenses Type"
+        l.text      = UserManager.shared.isRussian ? "Тип расходов" : "Expenses Type"
         l.font      = DS.golosBold(20)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.78
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
     private let datePillContainer: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor(white: 0.93, alpha: 1)
-        v.layer.cornerRadius = 12
+        v.backgroundColor = UIColor.white.withAlphaComponent(0.70)
+        v.layer.cornerRadius = 15
         v.layer.cornerCurve  = .continuous
+        v.layer.borderWidth = 1
+        v.layer.borderColor = UIColor.white.withAlphaComponent(0.78).cgColor
+        v.layer.shadowColor = UIColor.black.cgColor
+        v.layer.shadowOpacity = 0.06
+        v.layer.shadowRadius = 9
+        v.layer.shadowOffset = CGSize(width: 0, height: 5)
+        v.setContentCompressionResistancePriority(.required, for: .horizontal)
         v.translatesAutoresizingMaskIntoConstraints = false
         return v
     }()
@@ -70,24 +81,27 @@ final class ExpenseChartViewUIKit: UIView {
         l.text      = "November"
         l.font      = DS.inter(13)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.75
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
-    private let yearButton: UIButton = {
+    private lazy var yearButton: UIButton = {
         let b = UIButton(type: .custom)
-        let attrs = NSAttributedString(string: "Year", attributes: [
-            .font: DS.inter(13),
-            .foregroundColor: DS.textPrimary
-        ])
-        b.setAttributedTitle(attrs, for: .normal)
-        let icon = UIImage(systemName: "chevron.up.chevron.down",
-                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .bold))
-        b.setImage(icon, for: .normal)
-        b.tintColor = DS.accent
-        b.semanticContentAttribute = .forceRightToLeft
-        b.titleEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.70)
+        b.layer.cornerRadius = 15
+        b.layer.cornerCurve = .continuous
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.white.withAlphaComponent(0.78).cgColor
+        b.layer.shadowColor = UIColor.black.cgColor
+        b.layer.shadowOpacity = 0.06
+        b.layer.shadowRadius = 9
+        b.layer.shadowOffset = CGSize(width: 0, height: 5)
+        b.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
         b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(showMonthPicker), for: .touchUpInside)
         return b
     }()
 
@@ -124,8 +138,17 @@ final class ExpenseChartViewUIKit: UIView {
     private var gradientLayer: CAGradientLayer?
 
     // MARK: - Init
-    override init(frame: CGRect) { super.init(frame: frame); setup() }
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+    }
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -174,7 +197,7 @@ final class ExpenseChartViewUIKit: UIView {
             pillStack.bottomAnchor.constraint(equalTo: datePillContainer.bottomAnchor, constant: -5),
             pillStack.leadingAnchor.constraint(equalTo: datePillContainer.leadingAnchor, constant: 8),
             pillStack.trailingAnchor.constraint(equalTo: datePillContainer.trailingAnchor, constant: -8),
-            datePillContainer.heightAnchor.constraint(equalToConstant: 30),
+            datePillContainer.heightAnchor.constraint(equalToConstant: 34),
 
             headerStack.topAnchor.constraint(equalTo: topAnchor),
             headerStack.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -206,6 +229,7 @@ final class ExpenseChartViewUIKit: UIView {
 
     func configure(categories: [ExpenseCategoryResponse]) {
         self.allCategories = categories
+        self.showingMock = categories.isEmpty
         if categories.isEmpty {
             showMock()
             emptyLabel.isHidden = true
@@ -214,6 +238,15 @@ final class ExpenseChartViewUIKit: UIView {
         
         // Always try to apply date filter if we hook this up, but for now just show default items
         renderRows(categories)
+    }
+
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        titleLabel.text = isRu ? "Тип расходов" : "Expenses Type"
+        emptyLabel.text = isRu ? "Пока ничего нет." : "Nothing here yet."
+        updateYearButton()
+        updateDateLabel()
+        showingMock ? showMock() : applyMockDateFilter()
     }
     
     // MARK: - Date Logic
@@ -235,7 +268,58 @@ final class ExpenseChartViewUIKit: UIView {
     private func updateDateLabel() {
         let df = DateFormatter()
         df.dateFormat = "MMMM"
+        df.locale = Locale(identifier: UserManager.shared.isRussian ? "ru_RU" : "en_US")
         monthLabel.text = df.string(from: selectedDate)
+    }
+
+    private func updateYearButton() {
+        let isRu = UserManager.shared.isRussian
+        let attrs = NSAttributedString(string: "\(isRu ? "Год" : "Year") ", attributes: [
+            .font: DS.inter(13),
+            .foregroundColor: DS.textPrimary
+        ])
+        let icon = NSTextAttachment()
+        icon.image = UIImage(systemName: "chevron.up.chevron.down")?
+            .withTintColor(DS.accent, renderingMode: .alwaysOriginal)
+        icon.bounds = CGRect(x: 0, y: -2, width: 12, height: 12)
+        let full = NSMutableAttributedString(attributedString: attrs)
+        full.append(NSAttributedString(attachment: icon))
+        yearButton.setAttributedTitle(full, for: .normal)
+    }
+
+    @objc private func showMonthPicker() {
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(title: isRu ? "Выберите месяц" : "Select Month", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .actionSheet)
+        let picker = UIDatePicker()
+        picker.datePickerMode = .date
+        picker.preferredDatePickerStyle = .wheels
+        picker.date = selectedDate
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        alert.view.addSubview(picker)
+
+        NSLayoutConstraint.activate([
+            picker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50),
+            picker.leadingAnchor.constraint(equalTo: alert.view.leadingAnchor),
+            picker.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor)
+        ])
+
+        alert.addAction(UIAlertAction(title: isRu ? "Применить" : "Apply", style: .default) { [weak self] _ in
+            guard let self else { return }
+            self.selectedDate = picker.date
+            self.updateDateLabel()
+            self.applyMockDateFilter()
+        })
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
+        findViewController()?.present(alert, animated: true)
+    }
+
+    private func findViewController() -> UIViewController? {
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let viewController = current as? UIViewController { return viewController }
+            responder = current.next
+        }
+        return nil
     }
     
     private func applyMockDateFilter() {
@@ -255,28 +339,31 @@ final class ExpenseChartViewUIKit: UIView {
     }
 
     private func renderRows(_ categories: [ExpenseCategoryResponse]) {
-        if categories.isEmpty {
+        let visibleCategories = categories.filter { !disabledCategoryKeys.contains($0.name) }
+        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        if visibleCategories.isEmpty {
             breakdownBar.configure(weights: [], colors: colors)
-            stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
             emptyLabel.isHidden = false
             return
         }
         
         emptyLabel.isHidden = true
-        let total = categories.reduce(0.0) { $0 + NSDecimalNumber(decimal: $1.totalAmount).doubleValue }
-        let weights = categories.map { NSDecimalNumber(decimal: $0.totalAmount).doubleValue / total * 100 }
-        breakdownBar.configure(weights: weights, colors: colors)
+        let total = visibleCategories.reduce(0.0) { $0 + NSDecimalNumber(decimal: $1.totalAmount).doubleValue }
+        let weights = visibleCategories.map { NSDecimalNumber(decimal: $0.totalAmount).doubleValue / total * 100 }
+        let visibleColors = visibleCategories.enumerated().map { colors[$0.offset % colors.count] }
+        breakdownBar.configure(weights: weights, colors: visibleColors)
 
-        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, cat) in categories.enumerated() {
             let amount = NSDecimalNumber(decimal: cat.totalAmount).doubleValue
-            let pct    = total > 0 ? amount / total * 100 : 0
-            stackView.addArrangedSubview(makeRow(name: cat.name, amount: amount, percent: pct, color: colors[i % colors.count]))
+            let isEnabled = !disabledCategoryKeys.contains(cat.name)
+            let pct = isEnabled && total > 0 ? amount / total * 100 : 0
+            stackView.addArrangedSubview(makeRow(nameKey: cat.name, amount: amount, percent: pct, color: colors[i % colors.count]))
             if i < categories.count - 1 { stackView.addArrangedSubview(makeDivider()) }
         }
     }
 
     private func showMock() {
+        showingMock = true
         let mocked: [(String, Double, Double)] = [
             ("Food",          12150, 27),
             ("Groceries",     11250, 25),
@@ -284,10 +371,16 @@ final class ExpenseChartViewUIKit: UIView {
             ("Subscriptions",  6750, 15),
             ("Utilities",      5850, 13)
         ]
-        breakdownBar.configure(weights: mocked.map { $0.2 }, colors: colors)
+        let visible = mocked.filter { !disabledCategoryKeys.contains($0.0) }
+        breakdownBar.configure(weights: visible.map { $0.2 }, colors: visible.enumerated().map { colors[$0.offset % colors.count] })
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        guard !visible.isEmpty else {
+            emptyLabel.isHidden = false
+            return
+        }
+        emptyLabel.isHidden = true
         for (i, cat) in mocked.enumerated() {
-            stackView.addArrangedSubview(makeRow(name: cat.0, amount: cat.1, percent: cat.2, color: colors[i % colors.count]))
+            stackView.addArrangedSubview(makeRow(nameKey: cat.0, amount: cat.1, percent: cat.2, color: colors[i % colors.count]))
             if i < mocked.count - 1 { stackView.addArrangedSubview(makeDivider()) }
         }
     }
@@ -300,10 +393,15 @@ final class ExpenseChartViewUIKit: UIView {
         return (fmt.string(from: NSNumber(value: value)) ?? "\(Int(value))") + "\u{20BD}"
     }
 
-    private func makeRow(name: String, amount: Double, percent: Double, color: UIColor) -> UIView {
+    private func makeRow(nameKey: String, amount: Double, percent: Double, color: UIColor) -> UIView {
         let row = UIView()
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        row.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        row.accessibilityIdentifier = nameKey
+        let tap = UITapGestureRecognizer(target: self, action: #selector(toggleCategoryFromGesture(_:)))
+        row.addGestureRecognizer(tap)
+        row.isUserInteractionEnabled = true
+        let isEnabled = !disabledCategoryKeys.contains(nameKey)
 
         let dot = UIView()
         dot.backgroundColor    = color
@@ -311,15 +409,15 @@ final class ExpenseChartViewUIKit: UIView {
         dot.translatesAutoresizingMaskIntoConstraints = false
 
         let nameLbl = UILabel()
-        nameLbl.text      = name
-        nameLbl.font      = DS.golosBold(15)
-        nameLbl.textColor = .white
+        nameLbl.text      = localizedCategory(nameKey)
+        nameLbl.font      = DS.golosBold(16)
+        nameLbl.textColor = isEnabled ? .white : UIColor.white.withAlphaComponent(0.45)
         nameLbl.translatesAutoresizingMaskIntoConstraints = false
 
         let amtLbl = UILabel()
         amtLbl.text          = formatAmount(amount)
-        amtLbl.font          = DS.golosBold(15)
-        amtLbl.textColor     = .white
+        amtLbl.font          = DS.golosBold(16)
+        amtLbl.textColor     = isEnabled ? .white : UIColor.white.withAlphaComponent(0.45)
         amtLbl.textAlignment = .right
         amtLbl.translatesAutoresizingMaskIntoConstraints = false
 
@@ -327,15 +425,17 @@ final class ExpenseChartViewUIKit: UIView {
         pctBadge.text              = String(format: "%.0f%%", percent)
         pctBadge.font              = DS.inter(11)
         pctBadge.textColor         = .white
-        pctBadge.backgroundColor   = UIColor.white.withAlphaComponent(0.18)
+        pctBadge.backgroundColor   = UIColor.white.withAlphaComponent(isEnabled ? 0.20 : 0.10)
         pctBadge.layer.cornerRadius = 8
         pctBadge.clipsToBounds     = true
         pctBadge.textAlignment     = .center
         pctBadge.translatesAutoresizingMaskIntoConstraints = false
 
-        let checkmark = UIImageView(image: UIImage(systemName: "checkmark.square"))
-        checkmark.tintColor = UIColor.white.withAlphaComponent(0.7)
-        checkmark.contentMode = .scaleAspectFit
+        let checkmark = UIButton(type: .system)
+        let symbol = isEnabled ? "checkmark.square.fill" : "square"
+        checkmark.setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 21, weight: .semibold)), for: .normal)
+        checkmark.tintColor = UIColor.white.withAlphaComponent(isEnabled ? 0.86 : 0.42)
+        checkmark.isUserInteractionEnabled = false
         checkmark.translatesAutoresizingMaskIntoConstraints = false
 
         [dot, nameLbl, amtLbl, pctBadge, checkmark].forEach { row.addSubview($0) }
@@ -347,6 +447,7 @@ final class ExpenseChartViewUIKit: UIView {
 
             nameLbl.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 10),
             nameLbl.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            nameLbl.trailingAnchor.constraint(lessThanOrEqualTo: amtLbl.leadingAnchor, constant: -10),
 
             checkmark.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16),
             checkmark.centerYAnchor.constraint(equalTo: row.centerYAnchor),
@@ -362,6 +463,36 @@ final class ExpenseChartViewUIKit: UIView {
             amtLbl.centerYAnchor.constraint(equalTo: row.centerYAnchor)
         ])
         return row
+    }
+
+    @objc private func toggleCategoryFromGesture(_ gesture: UITapGestureRecognizer) {
+        guard let key = gesture.view?.accessibilityIdentifier else { return }
+        toggleCategory(key)
+    }
+
+    private func toggleCategory(_ key: String) {
+        if disabledCategoryKeys.contains(key) {
+            disabledCategoryKeys.remove(key)
+        } else {
+            disabledCategoryKeys.insert(key)
+        }
+        showingMock ? showMock() : applyMockDateFilter()
+    }
+
+    private func localizedCategory(_ category: String) -> String {
+        guard UserManager.shared.isRussian else { return category }
+        switch category {
+        case "Food": return "Еда"
+        case "Groceries": return "Продукты"
+        case "Entertainment": return "Развлечения"
+        case "Subscriptions": return "Подписки"
+        case "Utilities": return "Коммунальные"
+        case "Rent": return "Аренда"
+        case "Tech": return "Техника"
+        case "Transport": return "Транспорт"
+        case "Health": return "Здоровье"
+        default: return category
+        }
     }
 
     private func makeDivider() -> UIView {

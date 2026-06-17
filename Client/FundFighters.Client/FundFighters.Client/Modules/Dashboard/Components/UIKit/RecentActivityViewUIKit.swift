@@ -25,9 +25,11 @@ final class RecentActivityViewUIKit: UIView {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text      = "Recent Activity"
+        l.text      = UserManager.shared.isRussian ? "Активность" : "Activity"
         l.font      = DS.golosBold(20)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.78
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -38,6 +40,7 @@ final class RecentActivityViewUIKit: UIView {
         v.backgroundColor = UIColor(white: 0.93, alpha: 1)
         v.layer.cornerRadius = 12
         v.layer.cornerCurve  = .continuous
+        v.setContentCompressionResistancePriority(.required, for: .horizontal)
         v.translatesAutoresizingMaskIntoConstraints = false
         return v
     }()
@@ -62,9 +65,11 @@ final class RecentActivityViewUIKit: UIView {
 
     private let todayLabel: UILabel = {
         let l = UILabel()
-        l.text      = "Today"
         l.font      = DS.inter(13)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.75
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -72,7 +77,14 @@ final class RecentActivityViewUIKit: UIView {
     // Date sort button: "November 29 ▼"
     private lazy var dateSortButton: UIButton = {
         let b = UIButton(type: .custom)
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.58)
+        b.layer.cornerRadius = 15
+        b.layer.cornerCurve = .continuous
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.white.withAlphaComponent(0.72).cgColor
+        b.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
         b.translatesAutoresizingMaskIntoConstraints = false
+        b.setContentCompressionResistancePriority(.required, for: .horizontal)
         b.addTarget(self, action: #selector(showDatePicker), for: .touchUpInside)
         return b
     }()
@@ -97,7 +109,6 @@ final class RecentActivityViewUIKit: UIView {
 
     private let emptyLabel: UILabel = {
         let l = UILabel()
-        l.text          = "No transactions yet"
         l.font          = DS.inter(14)
         l.textColor     = UIColor.white.withAlphaComponent(0.65)
         l.textAlignment = .center
@@ -122,9 +133,14 @@ final class RecentActivityViewUIKit: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
-        updateDateLabel()
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
     }
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -221,6 +237,15 @@ final class RecentActivityViewUIKit: UIView {
         }
     }
 
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        titleLabel.text = isRu ? "Активность" : "Activity"
+        emptyLabel.text = isRu ? "Нет транзакций за этот день" : "No transactions for this day"
+        updateDateLabel()
+        updateDateSortButton()
+        applyDateFilter()
+    }
+
     // MARK: - Date Actions
 
     @objc private func prevDayAction(_ sender: UIButton) {
@@ -259,8 +284,9 @@ final class RecentActivityViewUIKit: UIView {
 
     @objc private func showDatePicker() {
         guard let vc = findViewController() else { return }
+        let isRu = UserManager.shared.isRussian
 
-        let alert = UIAlertController(title: "Select Date", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: isRu ? "Выберите дату" : "Select Date", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .actionSheet)
 
         let picker = UIDatePicker()
         picker.datePickerMode = .date
@@ -275,19 +301,26 @@ final class RecentActivityViewUIKit: UIView {
             picker.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor)
         ])
 
-        alert.addAction(UIAlertAction(title: "Apply", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: isRu ? "Применить" : "Apply", style: .default) { [weak self] _ in
             self?.selectedDate = Calendar.current.startOfDay(for: picker.date)
             self?.updateDateLabel()
             self?.updateDateSortButton()
             self?.applyDateFilter()
         })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
         vc.present(alert, animated: true)
     }
 
     private func updateDateLabel() {
         let cal = Calendar.current
-        todayLabel.text = cal.isDateInToday(selectedDate) ? "Today" : shortDay(selectedDate)
+        let isRu = UserManager.shared.isRussian
+        if cal.isDateInToday(selectedDate) {
+            todayLabel.text = isRu ? "Сегодня" : "Today"
+        } else if cal.isDateInYesterday(selectedDate) {
+            todayLabel.text = isRu ? "Вчера" : "Yesterday"
+        } else {
+            todayLabel.text = shortDay(selectedDate)
+        }
     }
 
     private func updateDateSortButton() {
@@ -297,7 +330,7 @@ final class RecentActivityViewUIKit: UIView {
             .foregroundColor: DS.textPrimary
         ])
         let icon = NSTextAttachment()
-        icon.image = UIImage(named: "arrow-down")?.withRenderingMode(.alwaysOriginal)
+        icon.image = UIImage(systemName: "chevron.up.chevron.down")?.withTintColor(DS.accent, renderingMode: .alwaysOriginal)
         icon.bounds = CGRect(x: 0, y: -2, width: 12, height: 12)
         let full = NSMutableAttributedString(attributedString: attrs)
         full.append(NSAttributedString(attachment: icon))
@@ -307,12 +340,14 @@ final class RecentActivityViewUIKit: UIView {
     private func shortDay(_ date: Date) -> String {
         let df = DateFormatter()
         df.dateFormat = "d MMM"
+        df.locale = Locale(identifier: UserManager.shared.isRussian ? "ru_RU" : "en_US")
         return df.string(from: date)
     }
 
     private func formattedDate(_ date: Date) -> String {
         let df = DateFormatter()
-        df.dateFormat = "MMMM d"
+        df.dateFormat = UserManager.shared.isRussian ? "d MMM" : "MMM d"
+        df.locale = Locale(identifier: UserManager.shared.isRussian ? "ru_RU" : "en_US")
         return df.string(from: date)
     }
 
@@ -338,9 +373,11 @@ final class RecentActivityViewUIKit: UIView {
 
     private func makeRow(_ tx: TransactionResponse) -> UIView {
         let isIncome = tx.type.lowercased() == "income" || tx.type.lowercased() == "saving"
+        let isRu = UserManager.shared.isRussian
         let amount   = NSDecimalNumber(decimal: tx.amount).doubleValue
         let amtText  = String(format: "%@%@", isIncome ? "+" : "-", formatAmount(abs(amount)))
         let time     = formatTime(tx.createdAt)
+        let category = localizedCategory(tx.category, isRu: isRu)
 
         // Иконка: ассет из iconUrl или программный placeholder
         let logoView: UIView
@@ -352,22 +389,25 @@ final class RecentActivityViewUIKit: UIView {
             iv.translatesAutoresizingMaskIntoConstraints = false
             logoView = iv
         } else {
-            logoView = makeInitialsView(text: String(tx.category.prefix(2)).uppercased(),
-                                        bg: DS.accent.withAlphaComponent(0.8))
+            logoView = makeCategoryIconView(category: tx.category, isIncome: isIncome)
         }
         return buildRow(logoView: logoView, title: tx.description.isEmpty ? tx.category : tx.description,
-                        cat: tx.category, time: time, amount: amtText, isIncome: isIncome, transactionId: tx.id)
+                        cat: category, time: time, amount: amtText, isIncome: isIncome, transactionId: tx.id)
     }
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let rowView = gesture.view, let txId = rowView.accessibilityIdentifier else { return }
+        let isRu = UserManager.shared.isRussian
         
         // Show delete confirmation
-        let alert = UIAlertController(title: "Delete Transaction?", message: "This will remove the transaction and update your balance.", preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+        let alert = UIAlertController(
+            title: isRu ? "Удалить транзакцию?" : "Delete Transaction?",
+            message: isRu ? "Транзакция будет удалена, а баланс обновлен." : "This will remove the transaction and update your balance.",
+            preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: isRu ? "Удалить" : "Delete", style: .destructive) { [weak self] _ in
             self?.onDeleteTransaction?(txId)
         })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
         
         findViewController()?.present(alert, animated: true)
     }
@@ -406,6 +446,27 @@ final class RecentActivityViewUIKit: UIView {
 
     private func makeInitialsView(text: String, bg: UIColor) -> UIView {
         return GradientCircleView(colors: [bg, bg.withAlphaComponent(0.8)], text: text)
+    }
+
+    private func makeCategoryIconView(category: String, isIncome: Bool) -> UIView {
+        let (bg, symbol) = categoryIcon(category: category, isIncome: isIncome)
+        let view = UIView()
+        view.backgroundColor = bg
+        view.layer.cornerRadius = 22
+        view.clipsToBounds = true
+
+        let icon = UIImageView(image: UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)))
+        icon.tintColor = .white
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(icon)
+        NSLayoutConstraint.activate([
+            icon.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 24),
+            icon.heightAnchor.constraint(equalToConstant: 24)
+        ])
+        return view
     }
 
     private func buildRow(logoView: UIView, title: String, cat: String,
@@ -453,6 +514,7 @@ final class RecentActivityViewUIKit: UIView {
         amountLbl.textColor     = isIncome ? UIColor(red: 0.35, green: 0.86, blue: 0.51, alpha: 1) : UIColor(red: 1.00, green: 0.33, blue: 0.33, alpha: 1)
         amountLbl.textAlignment = .right
         amountLbl.translatesAutoresizingMaskIntoConstraints = false
+        amountLbl.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         // Design-driven colored pills
         let pillBg = UIView()
@@ -463,7 +525,8 @@ final class RecentActivityViewUIKit: UIView {
         pillBg.translatesAutoresizingMaskIntoConstraints = false
 
         let pillLbl = UILabel()
-        pillLbl.text          = isIncome ? "Income" : "Expense"
+        let isRu = UserManager.shared.isRussian
+        pillLbl.text          = isIncome ? (isRu ? "Доход" : "Income") : (isRu ? "Расход" : "Expense")
         pillLbl.font          = DS.inter(11)
         pillLbl.textColor     = .white
         pillLbl.textAlignment = .center
@@ -480,18 +543,18 @@ final class RecentActivityViewUIKit: UIView {
 
             titleLbl.bottomAnchor.constraint(equalTo: row.centerYAnchor, constant: 1),
             titleLbl.leadingAnchor.constraint(equalTo: logoView.trailingAnchor, constant: 14),
-            titleLbl.trailingAnchor.constraint(lessThanOrEqualTo: amountLbl.leadingAnchor, constant: -16),
+            titleLbl.trailingAnchor.constraint(lessThanOrEqualTo: amountLbl.leadingAnchor, constant: -24),
 
             subLbl.topAnchor.constraint(equalTo: titleLbl.bottomAnchor, constant: 2),
             subLbl.leadingAnchor.constraint(equalTo: titleLbl.leadingAnchor),
             subLbl.trailingAnchor.constraint(equalTo: titleLbl.trailingAnchor),
 
             amountLbl.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16),
-            amountLbl.bottomAnchor.constraint(equalTo: titleLbl.bottomAnchor, constant: 2),
-            amountLbl.widthAnchor.constraint(greaterThanOrEqualToConstant: 64),
+            amountLbl.bottomAnchor.constraint(equalTo: titleLbl.bottomAnchor, constant: 0),
+            amountLbl.widthAnchor.constraint(greaterThanOrEqualToConstant: 82),
 
             pillBg.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16),
-            pillBg.topAnchor.constraint(equalTo: subLbl.topAnchor, constant: -2),
+            pillBg.topAnchor.constraint(equalTo: amountLbl.bottomAnchor, constant: 7),
             pillBg.widthAnchor.constraint(equalToConstant: 64),
             pillBg.heightAnchor.constraint(equalToConstant: 20),
 
@@ -523,6 +586,45 @@ final class RecentActivityViewUIKit: UIView {
         let df = DateFormatter()
         df.dateFormat = "HH:mm"
         return df.string(from: date)
+    }
+
+    private func localizedCategory(_ category: String, isRu: Bool) -> String {
+        guard isRu else { return category }
+        switch category {
+        case "Subscriptions": return "Подписки"
+        case "Food": return "Еда"
+        case "Rent": return "Аренда"
+        case "Income": return "Доход"
+        case "Entertainment": return "Развлечения"
+        case "Tech": return "Техника"
+        case "Transport": return "Транспорт"
+        case "Health": return "Здоровье"
+        default: return "Другое"
+        }
+    }
+
+    private func categoryIcon(category: String, isIncome: Bool) -> (UIColor, String) {
+        switch category.lowercased() {
+        case "food", "groceries", "еда", "продукты":
+            return (.systemOrange, "cart.fill")
+        case "health", "здоровье":
+            return (.systemRed, "heart.fill")
+        case "subscriptions", "subscription", "подписки":
+            return (.systemGreen, "play.circle.fill")
+        case "rent", "аренда":
+            return (.systemBrown, "house.fill")
+        case "transport", "транспорт":
+            return (.systemIndigo, "car.fill")
+        case "entertainment", "развлечения":
+            return (.systemPurple, "tv.fill")
+        case "tech", "техника":
+            return (.systemBlue, "laptopcomputer")
+        case "income", "salary", "доход":
+            return (DS.accent, "briefcase.fill")
+        default:
+            return (isIncome ? DS.accent : UIColor.white.withAlphaComponent(0.16),
+                    isIncome ? "plus.circle.fill" : "bag.fill")
+        }
     }
 }
 

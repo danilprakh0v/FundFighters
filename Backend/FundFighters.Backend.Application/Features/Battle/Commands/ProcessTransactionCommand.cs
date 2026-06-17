@@ -64,6 +64,12 @@ public class ProcessTransactionCommand : IRequest<BattleStateDto>
     public string Category { get; set; } = string.Empty;
 
     /// <summary>
+    /// Опциональная дата транзакции. Если не указана, используется текущее время.
+    /// Optional transaction date. If not provided, current time is used.
+    /// </summary>
+    public DateTime? Date { get; set; }
+
+    /// <summary>
     /// Конструктор для инициализации команды с данными транзакции.
     /// Constructor to initialize command with transaction data.
     /// </summary>
@@ -72,12 +78,14 @@ public class ProcessTransactionCommand : IRequest<BattleStateDto>
     /// <param name="type">Тип операции / Transaction type.</param>
     /// <param name="title">Название операции / Transaction title.</param>
     /// <param name="category">Категория операции / Transaction category.</param>
-    public ProcessTransactionCommand(int playerId, decimal amount, TransactionType type, string title, string category)
+    /// <param name="date">Опциональная дата транзакции / Optional date.</param>
+    public ProcessTransactionCommand(int playerId, decimal amount, TransactionType type, string title, string category, DateTime? date = null)
     {
         PlayerId = playerId;
         Amount = amount;
         Type = type;
         Title = title;
         Category = category;
+        Date = date;
     }
 }

@@ -51,6 +51,16 @@ final class VerificationViewModel {
                     case .success(let response):
                         if let token = response.token {
                             TokenManager.shared.save(token)
+                            if let username = response.username, !username.isEmpty {
+                                UserManager.shared.saveProfile(
+                                    username: username,
+                                    email: response.email,
+                                    userId: response.userId
+                                )
+                            }
+                            if let isTwoFactorEnabled = response.isTwoFactorEnabled {
+                                UserManager.shared.saveTwoFactorEnabled(isTwoFactorEnabled)
+                            }
                             self?.onVerificationSuccess?()
                         } else {
                             self?.onError?("Verification failed: No token received.")

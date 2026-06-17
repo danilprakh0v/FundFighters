@@ -79,6 +79,24 @@ final class APIService {
             completion: completion
         )
     }
+
+    func updateTwoFactor(enabled: Bool, completion: @escaping (Result<TwoFactorStatusResponse, APIError>) -> Void) {
+        NetworkManager.shared.request(
+            endpoint: "/auth/two-factor",
+            method: "PUT",
+            body: UpdateTwoFactorRequest(enabled: enabled),
+            completion: completion
+        )
+    }
+
+    func updateProfile(username: String, completion: @escaping (Result<ProfileResponse, APIError>) -> Void) {
+        NetworkManager.shared.request(
+            endpoint: "/auth/profile",
+            method: "PUT",
+            body: UpdateProfileRequest(username: username),
+            completion: completion
+        )
+    }
     
     // MARK: - Главный экран (Dashboard)
     

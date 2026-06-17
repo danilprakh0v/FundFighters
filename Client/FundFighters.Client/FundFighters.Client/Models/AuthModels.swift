@@ -31,6 +31,30 @@ struct LoginResponse: Decodable {
     let token: String?
     let requiresTwoFactor: Bool?
     let username: String?
+    let email: String?
+    let userId: String?
+    let isTwoFactorEnabled: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case token
+        case requiresTwoFactor
+        case username
+        case email
+        case userId
+        case playerId
+        case isTwoFactorEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        token = try container.decodeIfPresent(String.self, forKey: .token)
+        requiresTwoFactor = try container.decodeIfPresent(Bool.self, forKey: .requiresTwoFactor)
+        username = try container.decodeIfPresent(String.self, forKey: .username)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        isTwoFactorEnabled = try container.decodeIfPresent(Bool.self, forKey: .isTwoFactorEnabled)
+        userId = try container.decodeIfPresent(String.self, forKey: .userId)
+            ?? container.decodeIfPresent(Int.self, forKey: .playerId).map(String.init)
+    }
 }
 
 struct VerifyCodeRequest: Encodable {
@@ -52,6 +76,26 @@ struct ResetPasswordRequest: Encodable {
     let newPassword: String
 }
 
+struct UpdateTwoFactorRequest: Encodable {
+    let enabled: Bool
+}
+
+struct TwoFactorStatusResponse: Decodable {
+    let isTwoFactorEnabled: Bool
+}
+
+struct UpdateProfileRequest: Encodable {
+    let username: String
+}
+
+struct ProfileResponse: Decodable {
+    let username: String
+    let email: String?
+    let userId: String?
+    let playerId: Int?
+    let isTwoFactorEnabled: Bool?
+}
+
 // MARK: - Модели Транзакций
 
 struct ProcessTransactionRequest: Encodable {
@@ -59,4 +103,5 @@ struct ProcessTransactionRequest: Encodable {
     let type: Int // 0 - Расход, 1 - Сбережение
     let title: String
     let category: String
+    let date: String?
 }

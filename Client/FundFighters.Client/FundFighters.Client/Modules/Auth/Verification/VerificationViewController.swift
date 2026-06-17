@@ -188,21 +188,6 @@ fileprivate final class LiquidGlassPaginationPill: UIView {
 }
 
 // MARK: - Green Circle Button (Круглая кнопка)
-fileprivate final class GreenCircleButton: UIButton {
-    init(iconName: String) {
-        super.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = DT.accentGreen
-        setImage(UIImage(systemName: iconName,
-                         withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)), for: .normal)
-        tintColor = .black
-    }
-    required init?(coder: NSCoder) { fatalError() }
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        layer.cornerRadius = bounds.height / 2; layer.cornerCurve = .continuous
-    }
-}
 
 // MARK: - Verification Type
 enum VerificationType { case emailRegistration, loginConfirmation }
@@ -311,8 +296,9 @@ final class UniversalVerificationViewController: UIViewController {
             DispatchQueue.main.async {
                 self?.shakeCodeField()
                 UINotificationFeedbackGenerator().notificationOccurred(.error)
-                let alert = UIAlertController(title: "Verification Failed", message: message, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Try Again", style: .default))
+                let isRu = UserManager.shared.isRussian
+                let alert = UIAlertController(title: isRu ? "Код не подтверждён" : "Verification Failed", message: message, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: isRu ? "Попробовать снова" : "Try Again", style: .default))
                 self?.present(alert, animated: true)
             }
         }
@@ -321,13 +307,10 @@ final class UniversalVerificationViewController: UIViewController {
             DispatchQueue.main.async {
                 guard let self else { return }
 
-                // Определение финального имени пользователя для сессии
-                let username: String = self.registeredUsername
-                    ?? UserDefaults.standard.string(forKey: "pendingUsername")
-                    ?? String(self.targetEmail.split(separator: "@").first ?? "Fighter")
-
-                UserManager.shared.session.username = username
-                UserDefaults.standard.set(username, forKey: "username")
+                if let username = self.registeredUsername ?? UserDefaults.standard.string(forKey: "pendingUsername"),
+                   !username.isEmpty {
+                    UserManager.shared.saveProfile(username: username, email: self.targetEmail)
+                }
                 UserDefaults.standard.removeObject(forKey: "pendingUsername")
 
                 self.animateFourthPillSuccess()

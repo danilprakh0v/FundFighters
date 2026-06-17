@@ -26,7 +26,13 @@ enum APIError: Error {
         case .invalidURL: return "Invalid URL endpoint."
         case .requestFailed: return "Network request failed."
         case .decodingFailed: return "Failed to decode server response."
-        case .serverError(let message): return message
+        case .serverError(let message):
+            if message == "Failed to send verification code. Please try again." {
+                return UserManager.shared.isRussian
+                    ? "Не удалось отправить код подтверждения. Проверьте почту или попробуйте ещё раз через несколько секунд."
+                    : "Failed to send the verification code. Check your email or try again in a few seconds."
+            }
+            return message
         case .unauthorized: return "Session expired. Please login again."
         case .unknown: return "An unknown error occurred."
         }

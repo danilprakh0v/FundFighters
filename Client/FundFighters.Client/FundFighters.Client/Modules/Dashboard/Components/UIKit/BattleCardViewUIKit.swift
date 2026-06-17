@@ -19,18 +19,28 @@ final class BattleCardViewUIKit: UIView {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text      = "Recent Battle"
-        l.font      = DS.golosBold(20)
+        l.text      = UserManager.shared.isRussian ? "Недавняя битва" : "Recent Battle"
+        l.font      = DS.golosBold(19)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.62
+        l.lineBreakMode = .byTruncatingTail
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
     private let datePillContainer: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor(white: 0.93, alpha: 1)
-        v.layer.cornerRadius = 12
+        v.backgroundColor = UIColor.white.withAlphaComponent(0.70)
+        v.layer.cornerRadius = 15
         v.layer.cornerCurve = .continuous
+        v.layer.borderWidth = 1
+        v.layer.borderColor = UIColor.white.withAlphaComponent(0.78).cgColor
+        v.layer.shadowColor = UIColor.black.cgColor
+        v.layer.shadowOpacity = 0.06
+        v.layer.shadowRadius = 9
+        v.layer.shadowOffset = CGSize(width: 0, height: 5)
+        v.setContentCompressionResistancePriority(.required, for: .horizontal)
         v.translatesAutoresizingMaskIntoConstraints = false
         return v
     }()
@@ -58,23 +68,27 @@ final class BattleCardViewUIKit: UIView {
         l.text      = "Today"
         l.font      = DS.inter(13)
         l.textColor = DS.textPrimary
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.75
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
-    private let dateSortButton: UIButton = {
+    private lazy var dateSortButton: UIButton = {
         let b = UIButton(type: .custom)
-        let attrs = NSAttributedString(string: "November 29", attributes: [
-            .font: DS.inter(13), .foregroundColor: DS.textPrimary
-        ])
-        b.setAttributedTitle(attrs, for: .normal)
-        let icon = UIImage(systemName: "chevron.up.chevron.down",
-                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 10, weight: .bold))
-        b.setImage(icon, for: .normal)
-        b.tintColor = DS.accent
-        b.semanticContentAttribute = .forceRightToLeft
-        b.titleEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.70)
+        b.layer.cornerRadius = 15
+        b.layer.cornerCurve = .continuous
+        b.layer.borderWidth = 1
+        b.layer.borderColor = UIColor.white.withAlphaComponent(0.78).cgColor
+        b.layer.shadowColor = UIColor.black.cgColor
+        b.layer.shadowOpacity = 0.06
+        b.layer.shadowRadius = 9
+        b.layer.shadowOffset = CGSize(width: 0, height: 5)
+        b.contentEdgeInsets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
         b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(showDatePicker), for: .touchUpInside)
         return b
     }()
 
@@ -138,7 +152,7 @@ final class BattleCardViewUIKit: UIView {
 
     private let nemesisLabel: UILabel = {
         let l = UILabel()
-        l.text      = "No Recent Battles"
+        l.text      = UserManager.shared.isRussian ? "Битв пока нет" : "No Recent Battles"
         l.font      = DS.golosBold(22)
         l.textColor = .white
         l.layer.shadowColor   = UIColor.black.cgColor
@@ -151,10 +165,13 @@ final class BattleCardViewUIKit: UIView {
 
     private let emptyLabel: UILabel = {
         let l = UILabel()
-        l.text          = "Nothing happened on this day."
-        l.font          = DS.inter(14)
-        l.textColor     = UIColor.white.withAlphaComponent(0.8)
+        l.text          = ""
+        l.font          = DS.golosSemi(16)
+        l.textColor     = UIColor.white.withAlphaComponent(0.78)
         l.textAlignment = .center
+        l.numberOfLines = 2
+        l.adjustsFontSizeToFitWidth = true
+        l.minimumScaleFactor = 0.72
         l.isHidden      = true
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
@@ -162,8 +179,17 @@ final class BattleCardViewUIKit: UIView {
 
     // MARK: - Init
 
-    override init(frame: CGRect) { super.init(frame: frame); setup() }
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLocalization), name: NSNotification.Name("LanguageChanged"), object: nil)
+        updateLocalization()
+    }
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -182,9 +208,12 @@ final class BattleCardViewUIKit: UIView {
         pillStack.translatesAutoresizingMaskIntoConstraints = false
         datePillContainer.addSubview(pillStack)
 
-        let headerStack = UIStackView(arrangedSubviews: [titleLabel, UIView(), datePillContainer, dateSortButton])
+        let spacer = UIView()
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let headerStack = UIStackView(arrangedSubviews: [titleLabel, spacer, datePillContainer, dateSortButton])
         headerStack.axis = .horizontal; headerStack.spacing = 8; headerStack.alignment = .center
         headerStack.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         addSubview(headerStack)
         addSubview(bannerView)
@@ -207,7 +236,7 @@ final class BattleCardViewUIKit: UIView {
             pillStack.bottomAnchor.constraint(equalTo: datePillContainer.bottomAnchor, constant: -5),
             pillStack.leadingAnchor.constraint(equalTo: datePillContainer.leadingAnchor, constant: 8),
             pillStack.trailingAnchor.constraint(equalTo: datePillContainer.trailingAnchor, constant: -8),
-            datePillContainer.heightAnchor.constraint(equalToConstant: 30),
+            datePillContainer.heightAnchor.constraint(equalToConstant: 34),
 
             headerStack.topAnchor.constraint(equalTo: topAnchor),
             headerStack.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -236,8 +265,9 @@ final class BattleCardViewUIKit: UIView {
             axeImageView.widthAnchor.constraint(equalToConstant: 130),
             axeImageView.heightAnchor.constraint(equalToConstant: 130),
             
-            emptyLabel.centerXAnchor.constraint(equalTo: bannerView.centerXAnchor),
-            emptyLabel.centerYAnchor.constraint(equalTo: bannerView.centerYAnchor, constant: 10),
+            emptyLabel.leadingAnchor.constraint(equalTo: bannerView.leadingAnchor, constant: 24),
+            emptyLabel.trailingAnchor.constraint(equalTo: bannerView.trailingAnchor, constant: -24),
+            emptyLabel.topAnchor.constraint(equalTo: bannerView.topAnchor, constant: 62),
 
             // Враг (Playstation monster) слева направо снизу — сделан крупнее
             enemyImageView.leadingAnchor.constraint(equalTo: bannerView.leadingAnchor, constant: 20),
@@ -246,7 +276,8 @@ final class BattleCardViewUIKit: UIView {
             enemyImageView.heightAnchor.constraint(equalToConstant: 215),
 
             nemesisLabel.bottomAnchor.constraint(equalTo: bannerView.bottomAnchor, constant: -12),
-            nemesisLabel.trailingAnchor.constraint(equalTo: bannerView.trailingAnchor, constant: -16)
+            nemesisLabel.trailingAnchor.constraint(equalTo: bannerView.trailingAnchor, constant: -16),
+            nemesisLabel.leadingAnchor.constraint(greaterThanOrEqualTo: bannerView.leadingAnchor, constant: 24)
         ])
     }
 
@@ -255,6 +286,14 @@ final class BattleCardViewUIKit: UIView {
     func configure(battles: [BattleResponse]) {
         self.allBattles = battles
         
+        applyDateFilter()
+    }
+
+    @objc private func updateLocalization() {
+        let isRu = UserManager.shared.isRussian
+        titleLabel.text = isRu ? "Недавняя битва" : "Recent Battle"
+        emptyLabel.text = ""
+        updateDateLabel()
         applyDateFilter()
     }
     
@@ -266,13 +305,30 @@ final class BattleCardViewUIKit: UIView {
         
         if let last = valids.first, !last.enemyName.isEmpty {
             nemesisLabel.text = last.enemyName
+            enemyImageView.image = enemyImageForActiveGoal()
             enemyImageView.isHidden = false
             emptyLabel.isHidden = true
         } else {
-            nemesisLabel.text = "No Recent Battles"
-            enemyImageView.isHidden = true
-            emptyLabel.isHidden = false
+            if !UserManager.shared.session.customEnemyName.isEmpty {
+                nemesisLabel.text = UserManager.shared.isRussian
+                    ? "Готов к битве"
+                    : "Ready to Fight"
+            } else {
+                nemesisLabel.text = UserManager.shared.isRussian ? "Битв пока нет" : "No Recent Battles"
+            }
+            enemyImageView.image = enemyImageForActiveGoal()
+            enemyImageView.isHidden = false
+            emptyLabel.isHidden = true
         }
+    }
+
+    private func enemyImageForActiveGoal() -> UIImage? {
+        let goal = UserManager.shared.activeEnemyGoal()
+        if !goal.isDefault,
+           let custom = UserManager.shared.customEnemyImage() {
+            return custom
+        }
+        return UIImage(named: "recent_enemy")
     }
     
     @objc private func prevDayAction(_ sender: UIButton) {
@@ -291,7 +347,14 @@ final class BattleCardViewUIKit: UIView {
     
     private func updateDateLabel() {
         let cal = Calendar.current
-        periodLabel.text = cal.isDateInToday(selectedDate) ? "Today" : shortDay(selectedDate)
+        let isRu = UserManager.shared.isRussian
+        if cal.isDateInToday(selectedDate) {
+            periodLabel.text = isRu ? "Сегодня" : "Today"
+        } else if cal.isDateInYesterday(selectedDate) {
+            periodLabel.text = isRu ? "Вчера" : "Yesterday"
+        } else {
+            periodLabel.text = shortDay(selectedDate)
+        }
         
         // update sort button 
         let dateStr = formattedDate(selectedDate)
@@ -310,18 +373,55 @@ final class BattleCardViewUIKit: UIView {
         let full = NSMutableAttributedString(attributedString: attrs)
         full.append(NSAttributedString(attachment: icon))
         dateSortButton.setAttributedTitle(full, for: .normal)
-        dateSortButton.setImage(nil, for: .normal) // clean up generic image
+        dateSortButton.setImage(nil, for: .normal)
+    }
+
+    @objc private func showDatePicker() {
+        let isRu = UserManager.shared.isRussian
+        let alert = UIAlertController(title: isRu ? "Выберите дату" : "Select Date", message: "\n\n\n\n\n\n\n\n\n", preferredStyle: .actionSheet)
+        let picker = UIDatePicker()
+        picker.datePickerMode = .date
+        picker.preferredDatePickerStyle = .wheels
+        picker.date = selectedDate
+        picker.maximumDate = Date()
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        alert.view.addSubview(picker)
+
+        NSLayoutConstraint.activate([
+            picker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50),
+            picker.leadingAnchor.constraint(equalTo: alert.view.leadingAnchor),
+            picker.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor)
+        ])
+
+        alert.addAction(UIAlertAction(title: isRu ? "Применить" : "Apply", style: .default) { [weak self] _ in
+            self?.selectedDate = Calendar.current.startOfDay(for: picker.date)
+            self?.updateDateLabel()
+            self?.applyDateFilter()
+        })
+        alert.addAction(UIAlertAction(title: isRu ? "Отмена" : "Cancel", style: .cancel))
+        findViewController()?.present(alert, animated: true)
+    }
+
+    private func findViewController() -> UIViewController? {
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let viewController = current as? UIViewController { return viewController }
+            responder = current.next
+        }
+        return nil
     }
 
     private func shortDay(_ date: Date) -> String {
         let df = DateFormatter()
         df.dateFormat = "d MMM"
+        df.locale = Locale(identifier: UserManager.shared.isRussian ? "ru_RU" : "en_US")
         return df.string(from: date)
     }
 
     private func formattedDate(_ date: Date) -> String {
         let df = DateFormatter()
         df.dateFormat = "MMMM d"
+        df.locale = Locale(identifier: UserManager.shared.isRussian ? "ru_RU" : "en_US")
         return df.string(from: date)
     }
 
