@@ -510,6 +510,7 @@ Backend/FundFighters.Backend.API/FundFighters.API.http
 ## Автор
 
 Прахов Данил
+
 Группа: БПИ246
 
 GitHub: [danilprakh0v](https://github.com/danilprakh0v)
