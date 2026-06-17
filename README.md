@@ -511,7 +511,9 @@ Backend/FundFighters.Backend.API/FundFighters.API.http
 
 Прахов Данил
 Группа: БПИ246
+
 GitHub: [danilprakh0v](https://github.com/danilprakh0v)
+
 Telegram: [@danilprakhov](https://t.me/danilprakhov)
 
 ---
